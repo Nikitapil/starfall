@@ -143,3 +143,15 @@ export class StarfallApi<
       ...params,
     });
 }
+
+const instance = new StarfallApi();
+
+export const useStarfall = () => {
+  return {
+    createStarfallGame: instance.createStarfallGame,
+    getStarfallGame: instance.getStarfallGame,
+    joinStarfallGame: instance.joinStarfallGame,
+    startStarfallGame: instance.startStarfallGame,
+    executeStarfallCommand: instance.executeStarfallCommand,
+  };
+};

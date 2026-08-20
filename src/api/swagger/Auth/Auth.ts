@@ -125,3 +125,16 @@ export class AuthApi<
       ...params,
     });
 }
+
+const instance = new AuthApi();
+
+export const useAuth = () => {
+  return {
+    signup: instance.signup,
+    signin: instance.signin,
+    refresh: instance.refresh,
+    logout: instance.logout,
+    getRestorePasswordKey: instance.getRestorePasswordKey,
+    restorePassword: instance.restorePassword,
+  };
+};

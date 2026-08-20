@@ -26,3 +26,14 @@ export class <%= apiClassName %>Api<SecurityDataType = unknown><% if (!config.si
         <%~ includeFile('./procedure-call.ejs', { ...it, route }) %>
     <% } %>
 }
+
+const instance = new <%= apiClassName %>Api()
+
+export const use<%= apiClassName %> = () => {
+  return {
+    <% for (const route of routes) { %>
+        <%~ route.routeName.usage %>: instance.<%~ route.routeName.usage %>,
+    <% } %>
+  }
+    
+}
