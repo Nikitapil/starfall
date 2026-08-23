@@ -13,10 +13,7 @@ import eslintPluginPrettier from 'eslint-plugin-prettier';
 export default defineConfigWithVueTs(
   {
     name: 'app/files-to-lint',
-    files: ['**/*.{vue,ts,mts,tsx}'],
-    rules: {
-      'vue/multi-word-component-names': 'off'
-    }
+    files: ['**/*.{vue,ts,mts,tsx}']
   },
 
   globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
@@ -37,7 +34,9 @@ export default defineConfigWithVueTs(
     },
     rules: {
       // Включаем правило проверки стилей
-      'prettier/prettier': 'error'
+      'prettier/prettier': 'error',
+      // Разрешаем однословные имена компонентов (например, Auth.vue)
+      'vue/multi-word-component-names': 'off'
     }
   }
 );

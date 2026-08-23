@@ -1,0 +1,46 @@
+import { defineStore } from 'pinia';
+import type {
+  UserReturnDto,
+  AuthResponseDto,
+  LoginUserDto,
+  CreateUserDto
+} from '../../api/swagger/Auth/data-contracts';
+import { ref } from 'vue';
+import { setAuthToken } from '@/helpers/token-helpers';
+import { useAuth } from '@/api/swagger/Auth/Auth';
+
+export const useAuthStore = defineStore('auth', () => {
+  const user = ref<UserReturnDto | null>(null);
+
+  const isAuthLoading = ref(true);
+
+  const { signin: signinApi, signup: signupApi, refresh, logout: logoutApi } = useAuth();
+
+  const updateAuth = async (cb: () => Promise<AuthResponseDto>) => {
+    isAuthLoading.value = true;
+    try {
+      const { accessToken, user: userResponse } = await cb();
+      setAuthToken(accessToken);
+      user.value = userResponse;
+      return { error: null, success: true };
+    } catch (e) {
+      console.error(e);
+      return { error: e, success: false };
+    } finally {
+      isAuthLoading.value = false;
+    }
+  };
+
+  const signin = (data: LoginUserDto) => updateAuth(() => signinApi(data));
+
+  const signup = (data: CreateUserDto) => updateAuth(() => signupApi(data));
+
+  const refreshAuth = () => updateAuth(() => refresh());
+
+  const logout = async () => {
+    user.value = null;
+    await logoutApi();
+  };
+
+  return { user, isAuthLoading, signin, signup, refreshAuth, logout };
+});

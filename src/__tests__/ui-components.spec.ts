@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import AppButton from '@/components/ui/AppButton.vue';
 import AppInput from '@/components/ui/AppInput.vue';
 import AppSpinner from '@/components/ui/AppSpinner.vue';
+import StarfallLoader from '@/components/ui/StarfallLoader.vue';
 
 describe('AppButton', () => {
   it('applies the selected variant and size', () => {
@@ -91,5 +92,26 @@ describe('AppSpinner', () => {
     expect(wrapper.attributes('role')).toBe('status');
     expect(wrapper.attributes('aria-label')).toBe('Loading game');
     expect(wrapper.get('svg').classes()).toContain('size-6');
+  });
+});
+
+describe('StarfallLoader', () => {
+  it('renders the selected size and accessible label', () => {
+    const wrapper = mount(StarfallLoader, {
+      props: { size: 'lg', label: 'Connecting to command' }
+    });
+
+    expect(wrapper.attributes('role')).toBe('status');
+    expect(wrapper.get('svg').attributes('aria-hidden')).toBe('true');
+    expect(wrapper.get('.starfall-loader__visual').classes()).toContain('size-36');
+    expect(wrapper.text()).toContain('Connecting to command');
+  });
+
+  it('keeps the label available to screen readers when hidden', () => {
+    const wrapper = mount(StarfallLoader, {
+      props: { label: 'Authorizing', showLabel: false }
+    });
+
+    expect(wrapper.get('.sr-only').text()).toBe('Authorizing');
   });
 });
