@@ -1,8 +1,13 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import Auth from './auth/components/Auth.vue';
+import Main from './components/layout/Main.vue';
+</script>
 
 <template>
-  <div>
-    <h1>Starfall</h1>
+  <div class="flex flex-col h-screen">
+    <Main class="flex-1">
+      <Auth />
+    </Main>
   </div>
 </template>
 

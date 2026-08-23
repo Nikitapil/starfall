@@ -16,25 +16,25 @@ Starfall — тёмный тактический sci-fi интерфейс. Он
 
 Все токены объявлены в `src/assets/styles/main.css` через Tailwind `@theme`. В компонентах следует использовать семантические имена, а не произвольные hex-цвета.
 
-| Токен | Значение | Tailwind-класс (пример) | Назначение |
-| --- | --- | --- | --- |
-| `void` | `#05070C` | `bg-void` | самая глубокая подложка, затемнение |
-| `canvas` | `#080B12` | `bg-canvas` | основной фон приложения |
-| `surface` | `#0E1420` | `bg-surface` | панели, модальные окна |
-| `surface-raised` | `#151D2B` | `bg-surface-raised` | карточки и элементы над панелью |
-| `surface-hover` | `#1B2637` | `hover:bg-surface-hover` | hover/активная строка |
-| `ink` | `#F2F6FB` | `text-ink` | основной текст |
-| `ink-muted` | `#9AA9BC` | `text-ink-muted` | подписи и вторичный текст |
-| `ink-faint` | `#627086` | `text-ink-faint` | неактивные данные, placeholder |
-| `line` | `#243145` | `border-line` | обычные границы |
-| `line-strong` | `#34465F` | `border-line-strong` | выделенные границы |
-| `accent` | `#53D8FB` | `text-accent`, `bg-accent` | выбор, энергия, главное действие |
-| `accent-strong` | `#16BDE9` | `hover:bg-accent-strong` | hover основного действия |
-| `accent-soft` | `#153849` | `bg-accent-soft` | спокойная акцентная подложка |
-| `on-accent` | `#031014` | `text-on-accent` | текст поверх `accent` |
-| `success` | `#55D6A8` | `text-success` | восстановление, успех |
-| `warning` | `#F4BF62` | `text-warning` | кредит, предупреждение |
-| `danger` | `#FF6B72` | `text-danger` | урон, уничтожение, ошибка |
+| Токен            | Значение  | Tailwind-класс (пример)    | Назначение                          |
+| ---------------- | --------- | -------------------------- | ----------------------------------- |
+| `void`           | `#05070C` | `bg-void`                  | самая глубокая подложка, затемнение |
+| `canvas`         | `#080B12` | `bg-canvas`                | основной фон приложения             |
+| `surface`        | `#0E1420` | `bg-surface`               | панели, модальные окна              |
+| `surface-raised` | `#151D2B` | `bg-surface-raised`        | карточки и элементы над панелью     |
+| `surface-hover`  | `#1B2637` | `hover:bg-surface-hover`   | hover/активная строка               |
+| `ink`            | `#F2F6FB` | `text-ink`                 | основной текст                      |
+| `ink-muted`      | `#9AA9BC` | `text-ink-muted`           | подписи и вторичный текст           |
+| `ink-faint`      | `#627086` | `text-ink-faint`           | неактивные данные, placeholder      |
+| `line`           | `#243145` | `border-line`              | обычные границы                     |
+| `line-strong`    | `#34465F` | `border-line-strong`       | выделенные границы                  |
+| `accent`         | `#53D8FB` | `text-accent`, `bg-accent` | выбор, энергия, главное действие    |
+| `accent-strong`  | `#16BDE9` | `hover:bg-accent-strong`   | hover основного действия            |
+| `accent-soft`    | `#153849` | `bg-accent-soft`           | спокойная акцентная подложка        |
+| `on-accent`      | `#031014` | `text-on-accent`           | текст поверх `accent`               |
+| `success`        | `#55D6A8` | `text-success`             | восстановление, успех               |
+| `warning`        | `#F4BF62` | `text-warning`             | кредит, предупреждение              |
+| `danger`         | `#FF6B72` | `text-danger`              | урон, уничтожение, ошибка           |
 
 Правило пропорций: примерно 80% экрана занимают фон и поверхности, 15% — текст и границы, не более 5% — акцентные и статусные цвета.
 
@@ -105,7 +105,9 @@ Starfall — тёмный тактический sci-fi интерфейс. Он
 ### Основная кнопка
 
 ```html
-<button class="rounded-control bg-accent px-4 py-2.5 text-sm font-semibold text-on-accent transition-colors duration-200 ease-out-expo hover:bg-accent-strong disabled:opacity-40">
+<button
+  class="rounded-control bg-accent px-4 py-2.5 text-sm font-semibold text-on-accent transition-colors duration-200 ease-out-expo hover:bg-accent-strong disabled:opacity-40"
+>
   Завершить ход
 </button>
 ```
@@ -113,7 +115,9 @@ Starfall — тёмный тактический sci-fi интерфейс. Он
 ### Вторичная кнопка
 
 ```html
-<button class="rounded-control border border-line bg-surface-raised px-4 py-2.5 text-sm font-medium text-ink transition-colors duration-200 hover:border-line-strong hover:bg-surface-hover disabled:opacity-40">
+<button
+  class="rounded-control border border-line bg-surface-raised px-4 py-2.5 text-sm font-medium text-ink transition-colors duration-200 hover:border-line-strong hover:bg-surface-hover disabled:opacity-40"
+>
   Отмена
 </button>
 ```
@@ -129,7 +133,9 @@ Starfall — тёмный тактический sci-fi интерфейс. Он
 ### Игровая карта
 
 ```html
-<article class="aspect-[5/7] rounded-card border border-line bg-surface-raised p-3 transition duration-200 ease-out-expo hover:-translate-y-0.5 hover:border-line-strong">
+<article
+  class="aspect-[5/7] rounded-card border border-line bg-surface-raised p-3 transition duration-200 ease-out-expo hover:-translate-y-0.5 hover:border-line-strong"
+>
   <!-- изображение, стоимость, название и свойства -->
 </article>
 ```
@@ -139,7 +145,9 @@ Starfall — тёмный тактический sci-fi интерфейс. Он
 ### Поле ввода
 
 ```html
-<input class="w-full rounded-control border border-line bg-canvas px-3 py-2.5 text-sm text-ink placeholder:text-ink-faint hover:border-line-strong focus:border-accent focus:outline-none" />
+<input
+  class="w-full rounded-control border border-line bg-canvas px-3 py-2.5 text-sm text-ink placeholder:text-ink-faint hover:border-line-strong focus:border-accent focus:outline-none"
+/>
 ```
 
 ## 9. Иконки, изображения и звук
@@ -169,3 +177,47 @@ Starfall — тёмный тактический sci-fi интерфейс. Он
 6. Стабильна ли разметка при длинном тексте и крупных числах?
 
 Новый токен стоит добавлять только тогда, когда одно и то же визуальное решение повторилось минимум в двух независимых компонентах.
+
+## 12. Базовые UI-компоненты
+
+Для форм следует использовать компоненты из `src/components/ui`, а не повторять наборы Tailwind-классов на каждой странице.
+
+### `AppButton`
+
+Поддерживает варианты `primary`, `secondary`, `danger`, `ghost` и размеры `sm`, `md`, `lg`. По умолчанию используются `variant="primary"`, `size="md"` и безопасный `type="button"`.
+
+```vue
+<AppButton type="submit">Сохранить</AppButton>
+<AppButton variant="secondary" size="sm">Назад</AppButton>
+<AppButton variant="danger" :loading="isDeleting">Удалить</AppButton>
+```
+
+Props `disabled`, `loading` и `block` отвечают за недоступное состояние, индикатор загрузки и ширину `100%`. Для иконок предусмотрены слоты `leading` и `trailing`.
+
+### `AppInput`
+
+Компонент поддерживает `v-model`, props `label`, `hint`, `error`, `size`, `inputClass` и все стандартные атрибуты HTML input: `type`, `name`, `autocomplete`, `placeholder`, `disabled` и другие.
+
+```vue
+<AppInput
+  v-model="login"
+  class="mt-4"
+  input-class="font-mono"
+  label="Логин"
+  name="login"
+  autocomplete="username"
+  :error="errors.login"
+/>
+```
+
+Обычные `class` и `style` применяются к корневой обёртке компонента — через них задаются внешние отступы и ширина. `inputClass` предназначен для дополнительных классов нативного `<input>`.
+
+`error` автоматически включает красную границу, `aria-invalid` и доступное сообщение об ошибке. Слоты `leading` и `trailing` позволяют добавить иконку или интерактивный контрол, например показ пароля.
+
+### `AppSpinner`
+
+Индикатор загрузки поддерживает размеры `sm`, `md`, `lg`. Внутри другого доступного контрола он используется без подписи как декоративный элемент. При самостоятельном использовании нужно передать `label`:
+
+```vue
+<AppSpinner size="lg" label="Загрузка игрового поля" />
+```
