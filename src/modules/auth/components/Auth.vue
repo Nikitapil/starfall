@@ -37,9 +37,10 @@ const form = ref({
           type="text"
           name="email"
           label="Email"
+          validationName="Email"
           autocomplete="email"
           placeholder="Enter your email"
-          loading
+          rules="required|email"
         />
 
         <AppInput
@@ -48,8 +49,10 @@ const form = ref({
           type="text"
           name="username"
           label="Username"
+          validationName="Username"
           autocomplete="username"
           placeholder="Enter your username"
+          rules="required"
         />
 
         <AppInput
@@ -57,8 +60,10 @@ const form = ref({
           type="password"
           name="password"
           label="Password"
+          validationName="Password"
           autocomplete="new-password"
           placeholder="Enter your password"
+          rules="required"
         />
 
         <AppButton

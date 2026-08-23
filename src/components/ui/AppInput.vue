@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
+import type { HTMLAttributes, MaybeRef } from 'vue';
 import { computed, useAttrs, useId } from 'vue';
 
 import AppSpinner from './AppSpinner.vue';
+import { useField, type RuleExpression } from 'vee-validate';
 
 defineOptions({ inheritAttrs: false });
 
@@ -18,6 +19,9 @@ interface Props {
   loading?: boolean;
   inputClass?: HTMLAttributes['class'];
   disabled?: boolean;
+  name: string;
+  rules?: MaybeRef<RuleExpression<unknown>>;
+  validationName?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -34,10 +38,25 @@ const model = defineModel<InputValue>({ default: '' });
 const attrs = useAttrs();
 const generatedId = useId();
 
+const { errorMessage, handleBlur, validate } = useField(props.name, props.rules, {
+  validateOnMount: false,
+  validateOnValueUpdate: false,
+  syncVModel: true,
+  label: props.validationName
+});
+
+const handleChange = () => {
+  if (errorMessage.value) {
+    validate();
+  }
+};
+
+const error = computed(() => errorMessage.value || props.error);
+
 const inputId = computed(() => props.id ?? `app-input-${generatedId}`);
-const messageId = computed(() => `${inputId.value}-${props.error ? 'error' : 'hint'}`);
+const messageId = computed(() => `${inputId.value}-${error.value ? 'error' : 'hint'}`);
 const describedBy = computed(() => {
-  if (props.error || props.hint) return messageId.value;
+  if (error.value || props.hint) return messageId.value;
 
   return typeof attrs['aria-describedby'] === 'string' ? attrs['aria-describedby'] : undefined;
 });
@@ -56,7 +75,7 @@ const inputClasses = computed(() => [
   'w-full rounded-control border bg-canvas text-ink placeholder:text-ink-faint',
   'transition-[color,background-color,border-color,box-shadow] duration-200 ease-out-expo',
   'hover:border-line-strong focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
-  props.error ? 'border-danger focus:border-danger' : 'border-line focus:border-accent',
+  error.value ? 'border-danger focus:border-danger' : 'border-line focus:border-accent',
   sizeClasses[props.size],
   props.inputClass
 ]);
@@ -97,6 +116,8 @@ const inputClasses = computed(() => [
         :aria-invalid="error ? true : undefined"
         :aria-describedby="describedBy"
         :aria-busy="loading || undefined"
+        @input="handleChange"
+        @blur="handleBlur($event, true)"
       />
 
       <div
