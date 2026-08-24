@@ -4,8 +4,15 @@ import { computed, ref } from 'vue';
 import AppForm from '@/components/forms/AppForm.vue';
 import AppButton from '@/components/ui/AppButton.vue';
 import AppInput from '@/components/ui/AppInput.vue';
+import { useAuthStore } from '../useAuth';
+import { useForm } from 'vee-validate';
+
+const store = useAuthStore();
+
+const { validate } = useForm();
 
 const isSignIn = ref(true);
+const error = ref('');
 
 const formName = computed(() => (isSignIn.value ? 'Sign in' : 'Sign up'));
 
@@ -21,15 +28,56 @@ const form = ref({
   password: '',
   username: ''
 });
+
+const onSubmit = async () => {
+  const { valid } = await validate();
+
+  if (!valid) {
+    return;
+  }
+
+  if (isSignIn.value) {
+    const { success } = await store.signin(form.value);
+    if (!success) {
+      error.value = 'Wrong email or password';
+    }
+  } else {
+    const { error: responseError } = await store.signup(form.value);
+    if (
+      responseError &&
+      typeof responseError === 'object' &&
+      'message' in responseError &&
+      Array.isArray(responseError.message)
+    ) {
+      error.value = responseError.message[0];
+    }
+  }
+};
+
+const toggleMode = () => {
+  error.value = '';
+  isSignIn.value = !isSignIn.value;
+};
 </script>
 
 <template>
-  <AppForm class="flex h-full w-full items-center justify-center">
+  <AppForm
+    class="flex h-full w-full items-center justify-center"
+    @submit="onSubmit"
+  >
     <div class="grid w-full max-w-md gap-5 rounded-panel border border-line bg-surface p-6 shadow-panel">
       <div class="grid gap-1">
         <h2 class="font-display text-2xl font-semibold tracking-tight text-ink">{{ formName }}</h2>
         <p class="text-sm text-ink-muted">{{ formDescriptionName }} to start playing Starfall.</p>
       </div>
+
+      <p
+        v-if="error"
+        class="text-xs text-danger"
+        role="alert"
+      >
+        {{ error }}
+      </p>
 
       <div class="grid gap-4">
         <AppInput
@@ -41,6 +89,7 @@ const form = ref({
           autocomplete="email"
           placeholder="Enter your email"
           rules="required|email"
+          :loading="store.isAuthLoading"
         />
 
         <AppInput
@@ -53,6 +102,7 @@ const form = ref({
           autocomplete="username"
           placeholder="Enter your username"
           rules="required"
+          :loading="store.isAuthLoading"
         />
 
         <AppInput
@@ -64,9 +114,11 @@ const form = ref({
           autocomplete="new-password"
           placeholder="Enter your password"
           rules="required"
+          :loading="store.isAuthLoading"
         />
 
         <AppButton
+          :loading="store.isAuthLoading"
           type="submit"
           block
         >
@@ -79,7 +131,8 @@ const form = ref({
             type="button"
             variant="secondary"
             class="ml-4"
-            @click="isSignIn = !isSignIn"
+            :disabled="store.isAuthLoading"
+            @click="toggleMode"
           >
             {{ changeModeTexts.btnText }}
           </AppButton>

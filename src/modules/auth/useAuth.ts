@@ -23,9 +23,9 @@ export const useAuthStore = defineStore('auth', () => {
       setAuthToken(accessToken);
       user.value = userResponse;
       return { error: null, success: true };
-    } catch (e) {
-      console.error(e);
-      return { error: e, success: false };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (e: any) {
+      return { error: e?.response?.data || e, success: false };
     } finally {
       isAuthLoading.value = false;
     }

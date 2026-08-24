@@ -1,6 +1,4 @@
-<script setup lang="ts">
-defineOptions({ name: 'MainLayout' });
-</script>
+<script setup lang="ts"></script>
 
 <template>
   <main class="flex items-center justify-center h-full w-full">

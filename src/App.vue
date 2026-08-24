@@ -5,12 +5,12 @@ import { ref } from 'vue';
 import StarfallLoader from './components/ui/StarfallLoader.vue';
 import { useAuthStore } from './modules/auth/useAuth.ts';
 
-const { user, refreshAuth } = useAuthStore();
+const authStore = useAuthStore();
 
 const isInited = ref(false);
 
 (async () => {
-  await refreshAuth();
+  await authStore.refreshAuth();
   isInited.value = true;
 })();
 </script>
@@ -28,7 +28,7 @@ const isInited = ref(false);
       v-else
       class="flex-1"
     >
-      <Auth v-if="!user" />
+      <Auth v-if="!authStore.user" />
     </Main>
   </div>
 </template>

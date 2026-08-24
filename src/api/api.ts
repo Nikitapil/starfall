@@ -17,10 +17,15 @@ $api.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
-    if (error.response.status === 401 && error.config && !error.config._isRetry) {
+    if (
+      error.response.status === 401 &&
+      error.config &&
+      !error.config._isRetry &&
+      error.config.url !== '/api/auth/refresh'
+    ) {
       try {
         originalRequest._isRetry = true;
-        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/auth/refresh`, {
+        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}api/auth/refresh`, {
           withCredentials: true
         });
         setAuthToken(response.data.accessToken);
