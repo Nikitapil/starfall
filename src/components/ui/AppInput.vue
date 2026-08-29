@@ -111,6 +111,7 @@ const inputClasses = computed(() => [
         :id="inputId"
         v-model="model"
         v-bind="inputAttrs"
+        :name="name"
         :disabled="disabled || loading"
         :class="[inputClasses, { 'pl-10': $slots.leading || loading, 'pr-10': $slots.trailing }]"
         :aria-invalid="error ? true : undefined"

@@ -33,7 +33,7 @@ describe('AppButton', () => {
 describe('AppInput', () => {
   it('connects the label, error and input accessibly', () => {
     const wrapper = mount(AppInput, {
-      props: { label: 'Login', error: 'Login is required' }
+      props: { name: 'login', label: 'Login', error: 'Login is required' }
     });
 
     const input = wrapper.get('input');
@@ -63,7 +63,7 @@ describe('AppInput', () => {
 
   it('applies external classes to the wrapper and inputClass to the input', () => {
     const wrapper = mount(AppInput, {
-      props: { inputClass: 'font-mono' },
+      props: { name: 'login', inputClass: 'font-mono' },
       attrs: { class: 'mt-4' }
     });
 
@@ -74,7 +74,7 @@ describe('AppInput', () => {
 
   it('shows a contrasting spinner while loading', () => {
     const wrapper = mount(AppInput, {
-      props: { loading: true }
+      props: { name: 'login', loading: true }
     });
 
     expect(wrapper.findComponent(AppSpinner).exists()).toBe(true);

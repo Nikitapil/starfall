@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import Auth from './modules/auth/components/Auth.vue';
-import Main from './components/layout/Main.vue';
 import { ref } from 'vue';
+
+import AppHeader from './components/layout/AppHeader.vue';
+import Main from './components/layout/Main.vue';
 import StarfallLoader from './components/ui/StarfallLoader.vue';
+import Auth from './modules/auth/components/Auth.vue';
 import { useAuthStore } from './modules/auth/useAuth.ts';
 
 const authStore = useAuthStore();
@@ -16,19 +18,20 @@ const isInited = ref(false);
 </script>
 
 <template>
-  <div class="flex flex-col h-screen">
+  <div class="flex min-h-screen flex-col">
     <div
       v-if="!isInited"
-      class="w-full h-full flex items-center justify-center"
+      class="flex min-h-screen w-full items-center justify-center"
     >
       <StarfallLoader size="lg" />
     </div>
 
-    <Main
-      v-else
-      class="flex-1"
-    >
-      <Auth v-if="!authStore.user" />
-    </Main>
+    <template v-else>
+      <AppHeader v-if="authStore.user" />
+
+      <Main class="flex-1">
+        <Auth v-if="!authStore.user" />
+      </Main>
+    </template>
   </div>
 </template>
