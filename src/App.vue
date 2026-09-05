@@ -31,6 +31,7 @@ const isInited = ref(false);
 
       <Main class="flex-1">
         <Auth v-if="!authStore.user" />
+        <RouterView v-else />
       </Main>
     </template>
   </div>

@@ -194,6 +194,16 @@ Starfall — тёмный тактический sci-fi интерфейс. Он
 
 Props `disabled`, `loading` и `block` отвечают за недоступное состояние, индикатор загрузки и ширину `100%`. Для иконок предусмотрены слоты `leading` и `trailing`.
 
+Для навигации передавайте `to` (строку или объект маршрута) — компонент отрисует `RouterLink`. Для обычного адреса используйте `href`: будет создана ссылка `<a>`. Без этих props отрисовывается `<button>`; если переданы оба, приоритет у `to`.
+
+```vue
+<AppButton :to="{ name: 'games' }">Find a game</AppButton>
+<AppButton to="/" variant="secondary">Return home</AppButton>
+<AppButton href="https://example.com" target="_blank" rel="noopener noreferrer">Website</AppButton>
+```
+
+В режиме ссылки `disabled` и `loading` блокируют переход и обработчик `click`, убирают `href` и исключают элемент из Tab-навигации. Внешний вид и слоты одинаковы для кнопок и ссылок.
+
 ### `AppInput`
 
 Компонент поддерживает `v-model`, props `label`, `hint`, `error`, `size`, `inputClass` и все стандартные атрибуты HTML input: `type`, `name`, `autocomplete`, `placeholder`, `disabled` и другие.
@@ -231,6 +241,18 @@ Props `disabled`, `loading` и `block` отвечают за недоступн�
 ```
 
 Для небольших loading-состояний внутри кнопок и полей по-прежнему используется простой `AppSpinner`. `StarfallLoader` предназначен для центрального состояния целого экрана или крупной панели.
+
+### `AppCard`
+
+Базовая поверхность для самостоятельных смысловых блоков. Поддерживает HTML-тег через `as`, варианты `default`, `panel`, `raised`, `accent`, `danger`, отступы `none`, `sm`, `md`, `lg` и интерактивное состояние `interactive`.
+
+```vue
+<AppCard as="article" interactive>
+  <!-- содержимое карточки -->
+</AppCard>
+```
+
+`AppCard` следует использовать для карточек возможностей, форм-панелей, информационных блоков и CTA. Не нужно оборачивать им каждую группу элементов: таблицы без самостоятельного смысла, навигация и простые layout-контейнеры карточками не являются.
 
 ### `AppHeader`
 

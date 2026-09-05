@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 
 import AppButton from '@/components/ui/AppButton.vue';
+import AppCard from '@/components/ui/AppCard.vue';
 import AppInput from '@/components/ui/AppInput.vue';
 import AppSpinner from '@/components/ui/AppSpinner.vue';
 import StarfallLoader from '@/components/ui/StarfallLoader.vue';
@@ -27,6 +28,21 @@ describe('AppButton', () => {
     expect(wrapper.attributes('disabled')).toBeDefined();
     expect(wrapper.attributes('aria-busy')).toBe('true');
     expect(wrapper.find('svg').exists()).toBe(true);
+  });
+});
+
+describe('AppCard', () => {
+  it('supports semantic elements, variants, padding, and interaction', () => {
+    const wrapper = mount(AppCard, {
+      props: { as: 'article', variant: 'accent', padding: 'sm', interactive: true },
+      slots: { default: 'Fleet report' }
+    });
+
+    expect(wrapper.element.tagName).toBe('ARTICLE');
+    expect(wrapper.classes()).toContain('bg-accent-soft/40');
+    expect(wrapper.classes()).toContain('p-4');
+    expect(wrapper.classes()).toContain('hover:-translate-y-1');
+    expect(wrapper.text()).toBe('Fleet report');
   });
 });
 

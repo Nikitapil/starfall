@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 
 import AppForm from '@/components/forms/AppForm.vue';
 import AppButton from '@/components/ui/AppButton.vue';
+import AppCard from '@/components/ui/AppCard.vue';
 import AppInput from '@/components/ui/AppInput.vue';
 import { useAuthStore } from '../useAuth';
 import { useForm } from 'vee-validate';
@@ -65,7 +66,10 @@ const toggleMode = () => {
     class="flex h-full w-full items-center justify-center"
     @submit="onSubmit"
   >
-    <div class="grid w-full max-w-md gap-5 rounded-panel border border-line bg-surface p-6 shadow-panel">
+    <AppCard
+      variant="panel"
+      class="grid w-full max-w-md gap-5"
+    >
       <div class="grid gap-1">
         <h2 class="font-display text-2xl font-semibold tracking-tight text-ink">{{ formName }}</h2>
         <p class="text-sm text-ink-muted">{{ formDescriptionName }} to start playing Starfall.</p>
@@ -138,6 +142,6 @@ const toggleMode = () => {
           </AppButton>
         </p>
       </div>
-    </div>
+    </AppCard>
   </AppForm>
 </template>

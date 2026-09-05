@@ -8,9 +8,10 @@ const authStore = useAuthStore();
 </script>
 
 <template>
-  <header class="sticky top-0 z-40 w-full border-b border-line bg-surface/90 backdrop-blur-md">
-    <div class="mx-auto flex h-16 w-full items-center justify-between container px-4">
-      <div
+  <header class="sticky top-0 z-40 flex justify-center px-4 w-full border-b border-line bg-surface/90 backdrop-blur-md">
+    <div class="flex h-16 w-full items-center justify-between container">
+      <RouterLink
+        :to="{ name: 'home' }"
         class="inline-flex items-center gap-3"
         aria-label="Starfall"
       >
@@ -22,7 +23,7 @@ const authStore = useAuthStore();
         </span>
 
         <span class="font-display text-lg font-semibold uppercase tracking-[0.16em] text-ink">Starfall</span>
-      </div>
+      </RouterLink>
 
       <AppButton
         variant="ghost"

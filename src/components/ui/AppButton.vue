@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { RouterLink, type RouteLocationRaw } from 'vue-router';
 
 import AppSpinner from './AppSpinner.vue';
 
@@ -13,6 +14,8 @@ interface Props {
   disabled?: boolean;
   loading?: boolean;
   block?: boolean;
+  to?: RouteLocationRaw;
+  href?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -23,6 +26,28 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
   block: false
 });
+
+const emit = defineEmits<{ click: [event: MouseEvent] }>();
+const isLink = computed(() => props.to != null || props.href != null);
+const isDisabled = computed(() => props.disabled || props.loading);
+const element = computed(() => {
+  if (!isLink.value) return 'button';
+  return props.to != null && !isDisabled.value ? RouterLink : 'a';
+});
+const elementAttrs = computed(() => {
+  if (!isLink.value) return { type: props.type, disabled: isDisabled.value };
+  if (props.to != null && !isDisabled.value) return { to: props.to };
+  return { href: isDisabled.value ? undefined : props.href };
+});
+
+const handleClick = (event: MouseEvent) => {
+  if (isDisabled.value) {
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+  emit('click', event);
+};
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary: 'border-accent bg-accent text-on-accent hover:border-accent-strong hover:bg-accent-strong',
@@ -40,7 +65,8 @@ const sizeClasses: Record<ButtonSize, string> = {
 const buttonClasses = computed(() => [
   'inline-flex items-center justify-center rounded-control border font-semibold',
   'transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out-expo',
-  'active:translate-y-px disabled:pointer-events-none disabled:opacity-40',
+  'active:translate-y-px',
+  isDisabled.value && 'pointer-events-none opacity-40',
   variantClasses[props.variant],
   sizeClasses[props.size],
   props.block && 'w-full'
@@ -48,11 +74,15 @@ const buttonClasses = computed(() => [
 </script>
 
 <template>
-  <button
-    :type="type"
+  <component
+    :is="element"
+    v-bind="elementAttrs"
+    :role="isLink && isDisabled ? 'link' : undefined"
     :class="buttonClasses"
-    :disabled="disabled || loading"
+    :aria-disabled="isLink && isDisabled ? true : undefined"
+    :tabindex="isLink && isDisabled ? -1 : undefined"
     :aria-busy="loading || undefined"
+    @click="handleClick"
   >
     <AppSpinner
       v-if="loading"
@@ -62,5 +92,5 @@ const buttonClasses = computed(() => [
     <slot name="leading" />
     <span><slot /></span>
     <slot name="trailing" />
-  </button>
+  </component>
 </template>
