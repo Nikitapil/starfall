@@ -4,7 +4,6 @@ import { createMemoryHistory, createRouter } from 'vue-router';
 import type { StarfallGameListItemDto } from '@/api/swagger/Starfall/data-contracts';
 import Games from '@/modules/games/pages/Games.vue';
 import CreateGameModal from '@/modules/games/components/CreateGameModal.vue';
-import * as creation from '@/modules/games/useCreateGame';
 import { validation } from '@/plugins/validation';
 import appRouter from '@/router';
 import { mockDialog } from './helpers/mockDialog';
@@ -109,16 +108,19 @@ const openCreation = async () => {
 };
 
 describe('Game creation', () => {
-  it('opens with 50 HP and currently blocks submission because required rejects numbers', async () => {
+  it('creates with the default 50 HP and navigates to the new game', async () => {
+    createStarfallGame.mockResolvedValue({ id: 'new-game' });
     const { dialog, router } = await openCreation();
     expect(dialog.element.open).toBe(true);
     expect(dialog.get('input').element.value).toBe('50');
+    expect(dialog.get('input').attributes('min')).toBeUndefined();
+    expect(dialog.get('input').attributes('step')).toBe('1');
+    expect(dialog.get('input').attributes('inputmode')).toBe('numeric');
     expect(createStarfallGame).not.toHaveBeenCalled();
     await dialog.get('button[type="submit"]').trigger('click');
-    await vi.waitFor(() => expect(dialog.get('[role="alert"]').text()).toBe('Starting hp is required'));
-    expect(createStarfallGame).not.toHaveBeenCalled();
-    expect(router.currentRoute.value.path).toBe('/games');
-    expect(dialog.element.open).toBe(true);
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/games/new-game'));
+    expect(createStarfallGame).toHaveBeenCalledExactlyOnceWith({ startingHp: 50 });
+    expect(document.body.querySelector('dialog')).toBeNull();
   });
 
   it.each([
@@ -128,7 +130,9 @@ describe('Game creation', () => {
     ['1', 'Min value is 10'],
     ['9', 'Min value is 10'],
     ['501', 'Max value is 500'],
-    ['1.5', 'Min value is 10']
+    ['1.5', 'Must be a whole number'],
+    ['50.5', 'Must be a whole number'],
+    ['499.9', 'Must be a whole number']
   ])('shows the current validation error for HP %s', async (hp, message) => {
     const { dialog, router } = await openCreation();
     await dialog.get('input').setValue(hp);
@@ -138,14 +142,29 @@ describe('Game creation', () => {
     expect(router.currentRoute.value.path).toBe('/games');
   });
 
-  // Known issue: numeric values pass min/max but fail the string-only required rule.
-  it.each([10, 500, 50.5])('currently rejects numeric HP %s inside the configured range', async (hp) => {
+  it.each([10, 500])('creates with the boundary HP %s', async (hp) => {
+    createStarfallGame.mockResolvedValue({ id: 'boundary-game' });
     const { dialog, router } = await openCreation();
     await dialog.get('input').setValue(hp);
     await dialog.get('form').trigger('submit');
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/games/boundary-game'));
+    expect(createStarfallGame).toHaveBeenCalledExactlyOnceWith({ startingHp: hp });
+    expect(document.body.querySelector('dialog')).toBeNull();
+  });
+
+  it('allows submitting a number after correcting an empty required field', async () => {
+    createStarfallGame.mockResolvedValue({ id: 'corrected-game' });
+    const { dialog, router } = await openCreation();
+    await dialog.get('input').setValue('');
+    await dialog.get('form').trigger('submit');
     await vi.waitFor(() => expect(dialog.get('[role="alert"]').text()).toBe('Starting hp is required'));
     expect(createStarfallGame).not.toHaveBeenCalled();
-    expect(router.currentRoute.value.path).toBe('/games');
+
+    await dialog.get('input').setValue(75);
+    await dialog.get('form').trigger('submit');
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/games/corrected-game'));
+    expect(createStarfallGame).toHaveBeenCalledExactlyOnceWith({ startingHp: 75 });
+    expect(document.body.querySelector('dialog')).toBeNull();
   });
 
   it('navigates to the game ID supplied by the creation event', async () => {
@@ -154,20 +173,18 @@ describe('Game creation', () => {
     await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/games/new-game'));
   });
 
-  it('disables controls and closing during a request and displays the API error', async () => {
+  it('blocks duplicate submits and closing while loading, then allows retry after an API error', async () => {
     let rejectCreation!: (reason: Error) => void;
     createStarfallGame.mockReturnValueOnce(
       new Promise((_, reject) => {
         rejectCreation = reject;
       })
     );
-    // Drive the real request state directly: form submission is blocked by the known required bug.
-    const request = creation.useCreateGame();
-    vi.spyOn(creation, 'useCreateGame').mockReturnValueOnce(request);
+    createStarfallGame.mockResolvedValueOnce({ id: 'retry-game' });
     const { dialog, router } = await openCreation();
     await dialog.get('input').setValue(75);
-    const pending = request.createGame({ startingHp: 75 });
-    await flushPromises();
+    await dialog.get('form').trigger('submit');
+    await vi.waitFor(() => expect(createStarfallGame).toHaveBeenCalledOnce());
     expect(dialog.get('input').attributes('disabled')).toBeDefined();
     expect(dialog.get('button[type="submit"]').attributes('aria-busy')).toBe('true');
     expect(dialog.findAll('button').every((button) => button.attributes('disabled') !== undefined)).toBe(true);
@@ -176,15 +193,24 @@ describe('Game creation', () => {
     await dialog.get('form').trigger('submit');
     expect(createStarfallGame).toHaveBeenCalledOnce();
     rejectCreation(new Error('Network failure'));
-    await pending;
     await flushPromises();
     expect(dialog.get('[role="alert"]').text()).toContain('We couldn’t create the game');
     expect(dialog.get('input').element.value).toBe('75');
     expect(dialog.get('input').attributes('disabled')).toBeUndefined();
     expect(router.currentRoute.value.path).toBe('/games');
     expect(dialog.get('button[type="submit"]').attributes('aria-busy')).toBeUndefined();
-    await dialog.trigger('cancel');
+    await dialog.get('form').trigger('submit');
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/games/retry-game'));
+    expect(createStarfallGame).toHaveBeenCalledTimes(2);
+    expect(createStarfallGame).toHaveBeenLastCalledWith({ startingHp: 75 });
     expect(document.body.querySelector('dialog')).toBeNull();
+  });
+
+  it('uses IntegerInput to block fractional HP entry', async () => {
+    const { dialog } = await openCreation();
+    const event = new InputEvent('beforeinput', { data: '.', cancelable: true });
+    dialog.get('input').element.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
   });
 
   it('cancels without creating a game and resets HP when reopened', async () => {

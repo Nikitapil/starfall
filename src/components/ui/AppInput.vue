@@ -1,30 +1,13 @@
 <script setup lang="ts">
-import type { HTMLAttributes, MaybeRef } from 'vue';
 import { computed, useAttrs, useId } from 'vue';
 
 import AppSpinner from './AppSpinner.vue';
-import { useField, type RuleExpression } from 'vee-validate';
+import { useField } from 'vee-validate';
+import type { AppInputProps, InputSize, InputValue } from './AppInput.types';
 
 defineOptions({ inheritAttrs: false });
 
-type InputSize = 'sm' | 'md' | 'lg';
-type InputValue = string | number | null;
-
-interface Props {
-  id?: string;
-  label?: string;
-  hint?: string;
-  error?: string;
-  size?: InputSize;
-  loading?: boolean;
-  inputClass?: HTMLAttributes['class'];
-  disabled?: boolean;
-  name: string;
-  rules?: MaybeRef<RuleExpression<unknown>>;
-  validationName?: string;
-}
-
-const props = withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<AppInputProps>(), {
   id: undefined,
   label: undefined,
   hint: undefined,

@@ -1,13 +1,10 @@
 import { defineRule } from 'vee-validate';
-import { max_value, min_value } from '@vee-validate/rules';
+import { integer, max_value, min_value, required } from '@vee-validate/rules';
 
 export const validation = () => {
-  defineRule('required', (value: string, _, ctx) => {
-    if (!value || !value.length) {
-      return `${ctx.label || 'This Field'} is required`;
-    }
-    return true;
-  });
+  defineRule('required', (value: unknown, _, ctx) => required(value) || `${ctx.label || 'This Field'} is required`);
+
+  defineRule('integer', (value: unknown) => integer(value) || 'Must be a whole number');
 
   defineRule('email', (value: string) => {
     if (!value || !value.length) {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, useId } from 'vue';
 import AppModal from '@/components/ui/AppModal.vue';
-import AppInput from '@/components/ui/AppInput.vue';
+import IntegerInput from '@/components/ui/IntegerInput.vue';
 import AppButton from '@/components/ui/AppButton.vue';
 import { useCreateGame } from '../useCreateGame';
 import { useForm } from 'vee-validate';
@@ -39,18 +39,15 @@ const submit = async () => {
       :aria-busy="isLoading || undefined"
       @submit.prevent="submit"
     >
-      <AppInput
+      <IntegerInput
         v-model="startingHp"
         name="startingHp"
         label="Starting HP"
-        hint="1–500 HP. The standard game starts at 50."
-        type="number"
-        min="1"
-        max="500"
+        hint="10–500 HP, whole numbers only. The standard game starts at 50."
         required
         autofocus
         :disabled="isLoading"
-        rules="max_value:500|min_value:10|required"
+        rules="integer|max_value:500|min_value:10|required"
         validationName="Starting hp"
       />
       <p
