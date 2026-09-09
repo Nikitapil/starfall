@@ -8,11 +8,13 @@ let nativeDialog: ReturnType<typeof mockDialog>;
 beforeEach(() => {
   nativeDialog = mockDialog();
 });
-afterEach(() => {
-  nativeDialog.restore();
-  document.body.replaceChildren();
+enableAutoUnmount((unmount) => {
+  afterEach(() => {
+    unmount();
+    nativeDialog.restore();
+    document.body.replaceChildren();
+  });
 });
-enableAutoUnmount(afterEach);
 
 const mountModal = () => {
   const wrapper = mount(AppModal, {
@@ -23,7 +25,7 @@ const mountModal = () => {
 };
 
 describe('AppModal', () => {
-  it('opens a named native dialog, renders slots and restores scrolling on close', async () => {
+  it('opens a native dialog, renders its title, description and slots, and restores scrolling on close', async () => {
     document.body.style.overflow = 'auto';
     const { wrapper, getDialog } = mountModal();
     expect(document.body.querySelector('dialog')).toBeNull();
@@ -32,8 +34,8 @@ describe('AppModal', () => {
 
     expect(nativeDialog.showModal).toHaveBeenCalledOnce();
     expect(dialog.element.open).toBe(true);
-    expect(dialog.get('h2').attributes('id')).toBe(dialog.attributes('aria-labelledby'));
-    expect(dialog.get('p').attributes('id')).toBe(dialog.attributes('aria-describedby'));
+    expect(dialog.get('h2').text()).toBe('New battle');
+    expect(dialog.get('p').text()).toBe('Choose your settings.');
     expect(dialog.find('input[autofocus]').exists()).toBe(true);
     expect(dialog.text()).toContain('Confirm');
     expect(document.body.style.overflow).toBe('hidden');

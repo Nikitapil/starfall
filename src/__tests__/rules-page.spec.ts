@@ -21,7 +21,10 @@ describe('Rules page', () => {
   it('renders nested rule content and navigation after splitting the page into components', () => {
     const wrapper = mount(Rules, { global: { stubs: { RouterLink: RouterLinkStub } } });
 
-    expect(wrapper.findAll('#setup ol li')).toHaveLength(4);
+    expect(wrapper.findAll('#setup ol li strong').map((heading) => heading.text())).toEqual([
+      'Prepare personal decks.',
+      'Set Authority.'
+    ]);
     expect(wrapper.findAll('#cards h3').map((heading) => heading.text())).toEqual([
       'Trade',
       'Combat',
@@ -39,7 +42,6 @@ describe('Rules page', () => {
     expect(wrapper.findAll('#reference tbody tr')).toHaveLength(10);
     expect(wrapper.get('#reference').text()).toContain('8 Scouts + 2 Vipers');
     expect(wrapper.findAllComponents(RouterLinkStub).map((link) => link.props('to'))).toEqual([
-      { name: 'home' },
       { name: 'games' },
       { name: 'home' }
     ]);

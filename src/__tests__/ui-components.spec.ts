@@ -41,7 +41,8 @@ describe('AppCard', () => {
     expect(wrapper.element.tagName).toBe('ARTICLE');
     expect(wrapper.classes()).toContain('bg-accent-soft/40');
     expect(wrapper.classes()).toContain('p-4');
-    expect(wrapper.classes()).toContain('hover:-translate-y-1');
+    expect(wrapper.classes()).toContain('hover:border-line-strong');
+    expect(wrapper.classes()).toContain('hover:bg-surface-raised');
     expect(wrapper.text()).toBe('Fleet report');
   });
 });
