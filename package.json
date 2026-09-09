@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "@vee-validate/rules": "^4.15.1",
     "axios": "^1.19.0",
     "pinia": "^4.0.2",
     "swagger-typescript-api": "^13.12.6",

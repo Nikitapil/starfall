@@ -1,24 +1,36 @@
-import { flushPromises, mount } from '@vue/test-utils';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DOMWrapper, enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryHistory, createRouter } from 'vue-router';
 import type { StarfallGameListItemDto } from '@/api/swagger/Starfall/data-contracts';
 import Games from '@/modules/games/pages/Games.vue';
 import appRouter from '@/router';
+import { mockDialog } from './helpers/mockDialog';
 
-const { getStarfallGames } = vi.hoisted(() => ({ getStarfallGames: vi.fn() }));
+const { getStarfallGames, createStarfallGame } = vi.hoisted(() => ({
+  getStarfallGames: vi.fn(),
+  createStarfallGame: vi.fn()
+}));
 vi.mock('@/api/swagger/Starfall/Starfall', () => ({
-  useStarfall: () => ({ getStarfallGames })
+  useStarfall: () => ({ getStarfallGames, createStarfallGame })
 }));
 
 const mountLobby = async () => {
   const router = createRouter({ history: createMemoryHistory(), routes: appRouter.options.routes });
   await router.push('/games');
-  return { wrapper: mount(Games, { global: { plugins: [router] } }), router };
+  return { wrapper: mount(Games, { attachTo: document.body, global: { plugins: [router] } }), router };
 };
 
+let nativeDialog: ReturnType<typeof mockDialog>;
 beforeEach(() => {
+  nativeDialog = mockDialog();
   getStarfallGames.mockReset();
+  createStarfallGame.mockReset();
 });
+afterEach(() => {
+  nativeDialog.restore();
+  document.body.replaceChildren();
+});
+enableAutoUnmount(afterEach);
 
 describe('Game lobby', () => {
   it('shows loading before the response and an empty state after an empty response', async () => {
@@ -54,8 +66,6 @@ describe('Game lobby', () => {
     expect(wrapper.text()).toContain('Pilot Nova · Orion');
     expect(wrapper.text()).toContain('No players yet');
     expect(wrapper.text()).not.toContain('No games available yet');
-    await wrapper.get('button').trigger('click');
-    expect(router.currentRoute.value.path).toBe('/games');
     expect(getStarfallGames).toHaveBeenCalledOnce();
 
     const link = wrapper.get('a[href="/games/game-123456"]');
@@ -82,5 +92,87 @@ describe('Game lobby', () => {
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
     expect(wrapper.text()).toContain('No games available yet');
     wrapper.unmount();
+  });
+});
+
+const openCreation = async () => {
+  getStarfallGames.mockResolvedValue([]);
+  const lobby = await mountLobby();
+  await lobby.wrapper.get('button').trigger('click');
+  return { ...lobby, dialog: new DOMWrapper(document.body.querySelector('dialog')!) };
+};
+
+describe('Game creation', () => {
+  it('opens with 50 HP, creates the game and navigates to its ID', async () => {
+    createStarfallGame.mockResolvedValue({ id: 'new-game' });
+    const { dialog, router } = await openCreation();
+    expect(dialog.element.open).toBe(true);
+    expect(dialog.get('input').element.value).toBe('50');
+    expect(createStarfallGame).not.toHaveBeenCalled();
+    await dialog.get('button[type="submit"]').trigger('click');
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/games/new-game'));
+    expect(createStarfallGame).toHaveBeenCalledExactlyOnceWith({ startingHp: 50 });
+    expect(document.body.querySelector('dialog')).toBeNull();
+  });
+
+  it.each(['', '0', '-1', '501', '1.5'])('rejects invalid HP: %s', async (hp) => {
+    const { dialog, router } = await openCreation();
+    await dialog.get('input').setValue(hp);
+    await dialog.get('form').trigger('submit');
+    expect(dialog.get('[role="alert"]').text()).toContain('whole number between 1 and 500');
+    expect(createStarfallGame).not.toHaveBeenCalled();
+    expect(router.currentRoute.value.path).toBe('/games');
+  });
+
+  it.each([1, 500])('accepts the HP boundary %s', async (hp) => {
+    createStarfallGame.mockResolvedValue({ id: 'boundary-game' });
+    const { dialog, router } = await openCreation();
+    await dialog.get('input').setValue(hp);
+    await dialog.get('form').trigger('submit');
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/games/boundary-game'));
+    expect(createStarfallGame).toHaveBeenCalledExactlyOnceWith({ startingHp: hp });
+  });
+
+  it('blocks duplicate submissions and closing while loading, and allows retry after an error', async () => {
+    let rejectCreation!: (reason: Error) => void;
+    createStarfallGame.mockReturnValueOnce(
+      new Promise((_, reject) => {
+        rejectCreation = reject;
+      })
+    );
+    createStarfallGame.mockResolvedValueOnce({ id: 'retry-game' });
+    const { dialog, router } = await openCreation();
+    await dialog.get('input').setValue(75);
+    await dialog.get('form').trigger('submit');
+    expect(dialog.get('input').attributes('disabled')).toBeDefined();
+    expect(dialog.get('button[type="submit"]').attributes('aria-busy')).toBe('true');
+    expect(dialog.findAll('button').every((button) => button.attributes('disabled') !== undefined)).toBe(true);
+    await dialog.trigger('cancel');
+    expect(dialog.element.open).toBe(true);
+    await dialog.get('form').trigger('submit');
+    expect(createStarfallGame).toHaveBeenCalledOnce();
+    rejectCreation(new Error('Network failure'));
+    await flushPromises();
+    expect(dialog.get('[role="alert"]').text()).toContain('We couldn’t create the game');
+    expect(dialog.get('input').element.value).toBe('75');
+    expect(dialog.get('input').attributes('disabled')).toBeUndefined();
+    expect(router.currentRoute.value.path).toBe('/games');
+    await dialog.get('form').trigger('submit');
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/games/retry-game'));
+    expect(createStarfallGame).toHaveBeenCalledTimes(2);
+    expect(createStarfallGame).toHaveBeenLastCalledWith({ startingHp: 75 });
+  });
+
+  it('cancels without creating a game and resets HP when reopened', async () => {
+    const { dialog, wrapper } = await openCreation();
+    await dialog.get('input').setValue(100);
+    await dialog
+      .findAll('button')
+      .find((button) => button.text() === 'Cancel')!
+      .trigger('click');
+    expect(document.body.querySelector('dialog')).toBeNull();
+    expect(createStarfallGame).not.toHaveBeenCalled();
+    await wrapper.get('button').trigger('click');
+    expect(document.body.querySelector('input')?.value).toBe('50');
   });
 });

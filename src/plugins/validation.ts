@@ -1,4 +1,5 @@
 import { defineRule } from 'vee-validate';
+import { max_value, min_value } from '@vee-validate/rules';
 
 export const validation = () => {
   defineRule('required', (value: string, _, ctx) => {
@@ -20,5 +21,15 @@ export const validation = () => {
       return 'This field must be a valid email';
     }
     return true;
+  });
+
+  defineRule('max_value', (value: unknown, params: Parameters<typeof max_value>[1]) => {
+    const max = Array.isArray(params) ? params[0] : params.max;
+    return max_value(value, params) || `Max value is ${max}`;
+  });
+
+  defineRule('min_value', (value: unknown, params: Parameters<typeof min_value>[1]) => {
+    const min = Array.isArray(params) ? params[0] : params.min;
+    return min_value(value, params) || `Min value is ${min}`;
   });
 };

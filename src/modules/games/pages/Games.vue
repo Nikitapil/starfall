@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import AppPageHeader from '@/components/layout/AppPageHeader.vue';
 import AppButton from '@/components/ui/AppButton.vue';
 import AppCard from '@/components/ui/AppCard.vue';
@@ -6,8 +8,11 @@ import IconStar from '@/components/icons/IconStar.vue';
 import StarfallLoader from '@/components/ui/StarfallLoader.vue';
 import { useGamesList } from '../useGamesList';
 import GameListItem from '@/modules/games/components/GameListItem.vue';
+import CreateGameModal from '@/modules/games/components/CreateGameModal.vue';
 
 const { games, getGames, isLoading, error } = useGamesList();
+const router = useRouter();
+const isCreateModalOpen = ref(false);
 
 getGames();
 </script>
@@ -20,7 +25,10 @@ getGames();
       description="Browse available games and find your next opponent."
     >
       <template #actions>
-        <AppButton size="lg">
+        <AppButton
+          size="lg"
+          @click="isCreateModalOpen = true"
+        >
           <template #leading><span aria-hidden="true">+</span></template>
           Create game
         </AppButton>
@@ -97,4 +105,9 @@ getGames();
       </ul>
     </div>
   </section>
+  <CreateGameModal
+    v-if="isCreateModalOpen"
+    v-model="isCreateModalOpen"
+    @created="router.push({ name: 'game', params: { gameId: $event } })"
+  />
 </template>
