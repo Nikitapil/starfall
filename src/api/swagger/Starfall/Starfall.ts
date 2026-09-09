@@ -19,10 +19,12 @@ import type {
   EndTurnCommandDto,
   ExecuteStarfallCommandParams,
   GetStarfallGameParams,
+  GetStarfallGamesParams,
   JoinStarfallGameDto,
   JoinStarfallGameParams,
   PlayCardCommandDto,
   ResolvePendingCommandDto,
+  StarfallGameListItemDto,
   StarfallGameViewDto,
   StartStarfallGameDto,
   StartStarfallGameParams,
@@ -40,6 +42,7 @@ export class StarfallApi<
    * @name CreateStarfallGame
    * @summary Create a Starfall game
    * @request POST:/api/starfall/games
+   * @secure
    */
   createStarfallGame = (
     data: CreateStarfallGameDto,
@@ -49,7 +52,29 @@ export class StarfallApi<
       path: `/api/starfall/games`,
       method: "POST",
       body: data,
+      secure: true,
       type: ContentType.Json,
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Starfall
+   * @name GetStarfallGames
+   * @summary Get Starfall games ordered from newest to oldest
+   * @request GET:/api/starfall/games
+   * @secure
+   */
+  getStarfallGames = (
+    query: GetStarfallGamesParams,
+    params: RequestParams = {},
+  ) =>
+    this.request<StarfallGameListItemDto[], any>({
+      path: `/api/starfall/games`,
+      method: "GET",
+      query: query,
+      secure: true,
       format: "json",
       ...params,
     });
@@ -60,6 +85,7 @@ export class StarfallApi<
    * @name GetStarfallGame
    * @summary Get private Starfall game state
    * @request GET:/api/starfall/games/{gameId}
+   * @secure
    */
   getStarfallGame = (
     { gameId, ...query }: GetStarfallGameParams,
@@ -68,6 +94,7 @@ export class StarfallApi<
     this.request<StarfallGameViewDto, any>({
       path: `/api/starfall/games/${gameId}`,
       method: "GET",
+      secure: true,
       format: "json",
       ...params,
     });
@@ -78,6 +105,7 @@ export class StarfallApi<
    * @name JoinStarfallGame
    * @summary Join a waiting Starfall game
    * @request POST:/api/starfall/games/{gameId}/join
+   * @secure
    */
   joinStarfallGame = (
     { gameId, ...query }: JoinStarfallGameParams,
@@ -88,6 +116,7 @@ export class StarfallApi<
       path: `/api/starfall/games/${gameId}/join`,
       method: "POST",
       body: data,
+      secure: true,
       type: ContentType.Json,
       format: "json",
       ...params,
@@ -99,6 +128,7 @@ export class StarfallApi<
    * @name StartStarfallGame
    * @summary Start a Starfall game
    * @request POST:/api/starfall/games/{gameId}/start
+   * @secure
    */
   startStarfallGame = (
     { gameId, ...query }: StartStarfallGameParams,
@@ -109,6 +139,7 @@ export class StarfallApi<
       path: `/api/starfall/games/${gameId}/start`,
       method: "POST",
       body: data,
+      secure: true,
       type: ContentType.Json,
       format: "json",
       ...params,
@@ -120,6 +151,7 @@ export class StarfallApi<
    * @name ExecuteStarfallCommand
    * @summary Execute a Starfall game command
    * @request POST:/api/starfall/games/{gameId}/commands
+   * @secure
    */
   executeStarfallCommand = (
     { gameId, ...query }: ExecuteStarfallCommandParams,
@@ -138,6 +170,7 @@ export class StarfallApi<
       path: `/api/starfall/games/${gameId}/commands`,
       method: "POST",
       body: data,
+      secure: true,
       type: ContentType.Json,
       format: "json",
       ...params,
@@ -149,6 +182,7 @@ const instance = new StarfallApi();
 export const useStarfall = () => {
   return {
     createStarfallGame: instance.createStarfallGame,
+    getStarfallGames: instance.getStarfallGames,
     getStarfallGame: instance.getStarfallGame,
     joinStarfallGame: instance.joinStarfallGame,
     startStarfallGame: instance.startStarfallGame,

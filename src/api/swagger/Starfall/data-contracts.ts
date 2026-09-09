@@ -270,6 +270,18 @@ export interface StarfallGameViewDto {
   players: StarfallPlayerViewDto[];
 }
 
+export interface StarfallGameListItemDto {
+  /** Starfall game id */
+  id: string;
+  /**
+   * Game creation date
+   * @format date-time
+   */
+  createdAt: string;
+  /** Usernames of players connected to the game */
+  players: string[];
+}
+
 export interface JoinStarfallGameDto {
   /**
    * Game state version expected by the client
@@ -405,6 +417,14 @@ export enum StarfallGameViewDtoStatusEnum {
   Waiting = "waiting",
   Active = "active",
   Finished = "finished",
+}
+
+export interface GetStarfallGamesParams {
+  /**
+   * Return only games that have not started
+   * @default false
+   */
+  notStarted?: boolean;
 }
 
 export interface GetStarfallGameParams {

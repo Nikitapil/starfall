@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppPageHeader from '@/components/layout/AppPageHeader.vue';
 import AppCard from '@/components/ui/AppCard.vue';
 import RuleSection from '../components/RuleSection.vue';
 import RuleList from '../components/RuleList.vue';
@@ -13,14 +14,11 @@ const sections = Object.values(rulesSections);
 
 <template>
   <div class="w-full pb-24 pt-12 sm:pt-16">
-    <header class="max-w-4xl border-b border-line pb-10">
-      <p class="mt-10 font-mono text-xs uppercase text-accent">Starfall manual</p>
-      <h1 class="mt-3 font-display text-4xl font-semibold tracking-tight text-ink sm:text-6xl">Rules of starfall</h1>
-      <p class="mt-5 max-w-3xl text-base leading-7 text-ink-muted sm:text-lg">
-        Everything you need to command a fleet: setup, turn structure, card abilities, combat, and the edge cases that
-        matter when a battle comes down to a single point of Authority.
-      </p>
-    </header>
+    <AppPageHeader
+      eyebrow="Starfall manual"
+      title="Rules of starfall"
+      description="Everything you need to command a fleet: setup, turn structure, card abilities, combat, and the edge cases that matter when a battle comes down to a single point of Authority."
+    />
     <div class="mt-10 grid gap-12 lg:grid-cols-[13rem_minmax(0,48rem)] lg:items-start">
       <aside class="lg:sticky lg:top-24">
         <p class="mb-3 font-mono text-xs uppercase text-ink-faint">On this page</p>

@@ -38,7 +38,7 @@ const cardClasses = computed(() => [
   variantClasses[props.variant],
   paddingClasses[props.padding],
   props.interactive &&
-    'transition duration-200 ease-out-expo hover:-translate-y-1 hover:border-line-strong hover:bg-surface-raised'
+    'transition duration-200 ease-out-expo hover:border-line-strong hover:bg-surface-raised'
 ]);
 </script>
 
