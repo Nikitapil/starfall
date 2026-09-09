@@ -4,9 +4,9 @@ import type {
   AuthResponseDto,
   LoginUserDto,
   CreateUserDto
-} from '../../api/swagger/Auth/data-contracts';
+} from '@/api/swagger/Auth/data-contracts.ts';
 import { ref } from 'vue';
-import { setAuthToken } from '@/helpers/token-helpers';
+import { removeAuthToken, setAuthToken } from '@/helpers/token-helpers';
 import { useAuth } from '@/api/swagger/Auth/Auth';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -39,7 +39,11 @@ export const useAuthStore = defineStore('auth', () => {
 
   const logout = async () => {
     user.value = null;
-    await logoutApi();
+    try {
+      await logoutApi();
+    } finally {
+      removeAuthToken();
+    }
   };
 
   return { user, isAuthLoading, signin, signup, refreshAuth, logout };
