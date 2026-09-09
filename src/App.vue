@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onUnmounted, ref } from 'vue';
 
 import AppHeader from './components/layout/AppHeader.vue';
 import Main from './components/layout/Main.vue';
 import StarfallLoader from './components/ui/StarfallLoader.vue';
 import Auth from './modules/auth/components/Auth.vue';
 import { useAuthStore } from './modules/auth/useAuth.ts';
+import { subscribeToAuthChanges } from './modules/auth/auth-sync';
 
 const authStore = useAuthStore();
+onUnmounted(subscribeToAuthChanges(() => window.location.reload()));
 
 const isInited = ref(false);
 
