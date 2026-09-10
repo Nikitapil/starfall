@@ -52,7 +52,14 @@ afterEach(() => {
 });
 
 describe('Coordinated refresh', () => {
-  it('shares one refresh and retries all waiting requests with the new token', async () => {
+  it.each([
+    ['https://example.test', 'https://example.test/api/auth/refresh'],
+    ['https://example.test/', 'https://example.test/api/auth/refresh'],
+    ['https://example.test///', 'https://example.test/api/auth/refresh'],
+    ['https://example.test/backend', 'https://example.test/backend/api/auth/refresh'],
+    ['https://example.test/backend/', 'https://example.test/backend/api/auth/refresh']
+  ])('shares one normalized refresh for base URL %s and retries waiting requests', async (baseURL, refreshURL) => {
+    vi.stubEnv('VITE_API_BASE_URL', baseURL);
     const refresh = deferred<AxiosResponse>();
     refreshAdapter.mockReturnValue(refresh.promise);
     apiAdapter.mockImplementation(async (config) => {
@@ -68,7 +75,7 @@ describe('Coordinated refresh', () => {
     await vi.waitFor(() => expect(apiAdapter).toHaveBeenCalledTimes(3));
     await vi.waitFor(() => expect(refreshAdapter).toHaveBeenCalledOnce());
     const refreshConfig = refreshAdapter.mock.calls[0]![0];
-    expect(refreshConfig.url).toBe('https://example.test/api/auth/refresh');
+    expect(axios.getUri(refreshConfig)).toBe(refreshURL);
     expect(refreshConfig.withCredentials).toBe(true);
     expect(getAuthToken()).toBe('expired-token');
 

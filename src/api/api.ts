@@ -12,7 +12,10 @@ let refreshPromise: Promise<void> | null = null;
 const refreshAccessToken = () => {
   if (!refreshPromise) {
     refreshPromise = axios
-      .get<AuthResponseDto>(`${import.meta.env.VITE_API_BASE_URL}api/auth/refresh`, { withCredentials: true })
+      .get<AuthResponseDto>('/api/auth/refresh', {
+        baseURL: import.meta.env.VITE_API_BASE_URL,
+        withCredentials: true
+      })
       .then((response) => {
         setAuthToken(response.data.accessToken);
       })
