@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, type VNode } from 'vue';
+import { ref, useId, type VNode } from 'vue';
 import AppButton from './AppButton.vue';
 
 const props = withDefaults(defineProps<{ title: string; description?: string; dismissible?: boolean }>(), {
@@ -7,6 +7,7 @@ const props = withDefaults(defineProps<{ title: string; description?: string; di
 });
 
 const isOpen = defineModel<boolean>({ default: false });
+const titleId = useId();
 const startedOnBackdrop = ref(false);
 
 const previousOverflow = ref('');
@@ -48,6 +49,7 @@ const handleBackdropClick = (event: MouseEvent) => {
   <Teleport to="body">
     <dialog
       v-if="isOpen"
+      :aria-labelledby="titleId"
       class="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-card border border-line bg-surface p-6 text-ink shadow-2xl backdrop:bg-void/80 backdrop:backdrop-blur-sm sm:p-8"
       @cancel.prevent="requestClose"
       @vue:mounted="openDialog"
@@ -58,7 +60,10 @@ const handleBackdropClick = (event: MouseEvent) => {
     >
       <div class="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h2 class="font-display text-2xl font-semibold">
+          <h2
+            :id="titleId"
+            class="font-display text-2xl font-semibold"
+          >
             {{ title }}
           </h2>
           <p

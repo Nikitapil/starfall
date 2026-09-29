@@ -1,7 +1,9 @@
+import { createUuid } from '@/helpers/uuid';
+
 export const AUTH_CHANGE_KEY = 'starfall:auth-change';
 
 export const notifyAuthChange = () => {
-  localStorage.setItem(AUTH_CHANGE_KEY, crypto.randomUUID());
+  localStorage.setItem(AUTH_CHANGE_KEY, createUuid());
 };
 
 export const subscribeToAuthChanges = (onChange: () => void) => {

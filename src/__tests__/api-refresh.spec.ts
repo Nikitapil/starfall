@@ -159,3 +159,20 @@ describe('Coordinated refresh', () => {
     expect(refreshAdapter).not.toHaveBeenCalled();
   });
 });
+
+describe('Transport failures', () => {
+  it('preserves a network error without trying to refresh', async () => {
+    const error = new AxiosError('Network Error', AxiosError.ERR_NETWORK);
+    apiAdapter.mockRejectedValueOnce(error);
+    await expect($api.get('/api/starfall/games/game')).rejects.toBe(error);
+    expect(refreshAdapter).not.toHaveBeenCalled();
+  });
+  it('preserves request cancellation without trying to refresh', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    await expect($api.get('/api/starfall/games/game', { signal: controller.signal })).rejects.toMatchObject({
+      code: 'ERR_CANCELED'
+    });
+    expect(refreshAdapter).not.toHaveBeenCalled();
+  });
+});

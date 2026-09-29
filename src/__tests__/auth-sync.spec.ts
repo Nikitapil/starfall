@@ -7,6 +7,7 @@ afterEach(() => {
   unsubscribe?.();
   unsubscribe = undefined;
   localStorage.clear();
+  vi.unstubAllGlobals();
 });
 
 describe('Auth synchronization between tabs', () => {
@@ -24,6 +25,7 @@ describe('Auth synchronization between tabs', () => {
   });
 
   it('publishes unique notices without notifying the originating tab', () => {
+    vi.stubGlobal('crypto', { getRandomValues: globalThis.crypto.getRandomValues.bind(globalThis.crypto) });
     const reload = vi.fn();
     unsubscribe = subscribeToAuthChanges(reload);
     notifyAuthChange();

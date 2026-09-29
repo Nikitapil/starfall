@@ -11,5 +11,16 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
-  }
+  },
+  // server: {
+  //   host: true,
+  //   proxy: {
+  //     // Все запросы, начинающиеся с /api, будут перенаправлены на NestJS
+  //     '/api': {
+  //       target: 'http://192.168.1.107:5000/', // Укажи свой локальный IP и порт бэкенда
+  //       changeOrigin: true,
+  //       secure: false
+  //     }
+  //   }
+  // }
 });

@@ -20,14 +20,14 @@ import type {
   ExecuteStarfallCommandParams,
   GetStarfallGameParams,
   GetStarfallGamesParams,
+  GetStarfallLobbyParams,
   JoinStarfallGameDto,
   JoinStarfallGameParams,
   PlayCardCommandDto,
   ResolvePendingCommandDto,
   StarfallGameListItemDto,
   StarfallGameViewDto,
-  StartStarfallGameDto,
-  StartStarfallGameParams,
+  StarfallLobbyDto,
   UseAbilityCommandDto,
 } from "./data-contracts";
 import { ContentType, HttpClient, type RequestParams } from "./http-client";
@@ -125,22 +125,19 @@ export class StarfallApi<
    * No description
    *
    * @tags Starfall
-   * @name StartStarfallGame
-   * @summary Start a Starfall game
-   * @request POST:/api/starfall/games/{gameId}/start
+   * @name GetStarfallLobby
+   * @summary Get lobby details without private cards
+   * @request GET:/api/starfall/games/{gameId}/lobby
    * @secure
    */
-  startStarfallGame = (
-    { gameId, ...query }: StartStarfallGameParams,
-    data: StartStarfallGameDto,
+  getStarfallLobby = (
+    { gameId, ...query }: GetStarfallLobbyParams,
     params: RequestParams = {},
   ) =>
-    this.request<StarfallGameViewDto, any>({
-      path: `/api/starfall/games/${gameId}/start`,
-      method: "POST",
-      body: data,
+    this.request<StarfallLobbyDto, any>({
+      path: `/api/starfall/games/${gameId}/lobby`,
+      method: "GET",
       secure: true,
-      type: ContentType.Json,
       format: "json",
       ...params,
     });
@@ -185,7 +182,7 @@ export const useStarfall = () => {
     getStarfallGames: instance.getStarfallGames,
     getStarfallGame: instance.getStarfallGame,
     joinStarfallGame: instance.joinStarfallGame,
-    startStarfallGame: instance.startStarfallGame,
+    getStarfallLobby: instance.getStarfallLobby,
     executeStarfallCommand: instance.executeStarfallCommand,
   };
 };

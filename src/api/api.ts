@@ -3,7 +3,7 @@ import axios from 'axios';
 import type { AuthResponseDto } from './swagger/Auth/data-contracts';
 
 const $api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/',
   withCredentials: true
 });
 
@@ -38,7 +38,7 @@ $api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     if (
-      error.response.status === 401 &&
+      error.response?.status === 401 &&
       error.config &&
       !error.config._isRetry &&
       error.config.url !== '/api/auth/refresh'

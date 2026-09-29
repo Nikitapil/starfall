@@ -1,0 +1,208 @@
+import { computed, ref, toValue, type MaybeRefOrGetter, type Ref } from 'vue';
+import axios from 'axios';
+import { createUuid } from '@/helpers/uuid';
+import { useStarfall } from '@/api/swagger/Starfall/Starfall';
+import type { StarfallLobbyDto } from '@/api/swagger/Starfall/data-contracts';
+import type { GameAction, GameCommand, GameView } from './game-types';
+
+const POLL_DELAY = 2000;
+const REQUEST_TIMEOUT = 10000;
+
+export function useGame(gameId: MaybeRefOrGetter<string>, playerId: Ref<string>) {
+  const api = useStarfall();
+  const game = ref<GameView | null>(null);
+  const lobby = ref<StarfallLobbyDto | null>(null);
+  const isLoading = ref(true);
+  const isRefreshing = ref(false);
+  const isSending = ref(false);
+  const isSynced = ref(false);
+  const error = ref('');
+  const commandError = ref('');
+  const terminal = ref(false);
+  const uncertainCommand = ref<GameCommand | null>(null);
+  const me = computed(() => game.value?.players.find((p) => p.id === playerId.value));
+  const opponent = computed(() => game.value?.players.find((p) => p.id !== playerId.value));
+  const isMyTurn = computed(() => game.value?.status === 'active' && game.value.currentPlayerId === playerId.value);
+  const canSend = computed(() => isSynced.value && !terminal.value && !isSending.value && !uncertainCommand.value);
+  const canAct = computed(() => canSend.value && isMyTurn.value && !game.value?.pendingAction);
+  const canJoin = computed(
+    () => canSend.value && !game.value && lobby.value?.status === 'waiting' && lobby.value.players.length < 2
+  );
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let readController: AbortController | undefined;
+
+  const clearTimer = () => {
+    clearTimeout(timer);
+    timer = undefined;
+  };
+  const stopRead = () => {
+    readController?.abort();
+    readController = undefined;
+    isRefreshing.value = false;
+  };
+  const schedule = () => {
+    clearTimer();
+    if (terminal.value || isSending.value || game.value?.status === 'finished') return;
+    timer = setTimeout(refresh, POLL_DELAY);
+  };
+  const applyGame = (next: GameView) => {
+    if (next.id !== toValue(gameId) || (game.value && next.version < game.value.version)) {
+      return;
+    }
+    if (!game.value || next.version !== game.value.version) {
+      game.value = next;
+    }
+  };
+  const failureMessage = (cause: unknown) => {
+    const status = axios.isAxiosError(cause) ? cause.response?.status : undefined;
+    if (status === 404) return 'This game could not be found.';
+    if (status === 403) return 'You are not a participant in this game.';
+    if (status === 401) return 'Your session could not be verified. Please sign in again.';
+    return 'Connection interrupted. Reconnecting…';
+  };
+
+  async function refresh() {
+    clearTimer();
+    if (isSending.value || isRefreshing.value || terminal.value) {
+      return;
+    }
+    const id = toValue(gameId);
+    const user = toValue(playerId);
+    if (!id || !user) {
+      return;
+    }
+    isRefreshing.value = true;
+    const controller = new AbortController();
+    readController = controller;
+    const params = { signal: controller.signal, timeout: REQUEST_TIMEOUT };
+    try {
+      if (!game.value) {
+        const details = await api.getStarfallLobby({ gameId: id }, params);
+        if (readController !== controller) {
+          return;
+        }
+        lobby.value = details;
+        if (details.players.some((p) => p.id === user)) {
+          const next = await api.getStarfallGame({ gameId: id }, params);
+          if (readController !== controller) {
+            return;
+          }
+          applyGame(next);
+        }
+      } else {
+        const next = await api.getStarfallGame({ gameId: id }, params);
+        if (readController !== controller) return;
+        applyGame(next);
+      }
+      isSynced.value = true;
+      error.value = '';
+    } catch (cause) {
+      if (readController !== controller || axios.isCancel(cause)) {
+        return;
+      }
+      isSynced.value = false;
+      error.value = failureMessage(cause);
+      const status = axios.isAxiosError(cause) ? cause.response?.status : undefined;
+      terminal.value = status === 401 || status === 403 || status === 404;
+    } finally {
+      if (readController === controller) {
+        isLoading.value = false;
+        isRefreshing.value = false;
+        readController = undefined;
+        schedule();
+      }
+    }
+  }
+
+  async function mutate(command: GameCommand | null) {
+    if (isSending.value || terminal.value) {
+      return;
+    }
+    const id = toValue(gameId);
+    const version = lobby.value?.version;
+    clearTimer();
+    stopRead();
+    isSending.value = true;
+    commandError.value = '';
+    const params = { timeout: REQUEST_TIMEOUT };
+    try {
+      const next = command
+        ? await api.executeStarfallCommand({ gameId: id }, command, params)
+        : await api.joinStarfallGame({ gameId: id }, { expectedVersion: version! }, params);
+      applyGame(next);
+      uncertainCommand.value = null;
+      isSynced.value = true;
+      error.value = '';
+    } catch (cause) {
+      const status = axios.isAxiosError(cause) ? cause.response?.status : undefined;
+      isSynced.value = false;
+      if (status === 409) {
+        uncertainCommand.value = null;
+        commandError.value = 'The game changed. Review the updated board and choose your action again.';
+      } else if (status === 400) {
+        uncertainCommand.value = null;
+        const message = axios.isAxiosError<{ message?: unknown }>(cause) ? cause.response?.data?.message : undefined;
+        commandError.value = typeof message === 'string' ? message : 'This action is no longer available.';
+      } else if (status === 401 || status === 403 || status === 404) {
+        terminal.value = true;
+        error.value = failureMessage(cause);
+      } else {
+        uncertainCommand.value = command;
+        commandError.value = command
+          ? 'The action could not be confirmed. Retry the same action to safely check its result.'
+          : 'Joining could not be confirmed. Refreshing the game…';
+      }
+    } finally {
+      isSending.value = false;
+      if (!isSynced.value) void refresh();
+      else schedule();
+    }
+  }
+
+  const act = (action: GameAction) => {
+    if (!canSend.value || !game.value || game.value.status !== 'active') return;
+    const resolves = action.type === 'resolve_pending' || action.type === 'cancel_pending';
+    if (resolves ? game.value.pendingAction?.playerId !== toValue(playerId) : !canAct.value) return;
+    return mutate({ ...action, commandId: createUuid(), expectedVersion: game.value.version } as GameCommand);
+  };
+  const join = () => {
+    if (canJoin.value) return mutate(null);
+  };
+  const retryCommand = () => {
+    if (uncertainCommand.value) return mutate(uncertainCommand.value);
+  };
+  const retry = () => {
+    terminal.value = false;
+    return refresh();
+  };
+  const init = () => {
+    return refresh();
+  };
+  const clear = () => {
+    clearTimer();
+    stopRead();
+  };
+  return {
+    game,
+    lobby,
+    me,
+    opponent,
+    isMyTurn,
+    canAct,
+    canSend,
+    canJoin,
+    isLoading,
+    isRefreshing,
+    isSending,
+    isSynced,
+    error,
+    commandError,
+    uncertainCommand,
+    refresh: retry,
+    join,
+    act,
+    retryCommand,
+    init,
+    clear
+  };
+}

@@ -63,13 +63,17 @@ const sections = Object.values(rulesSections);
           <RuleList ordered>
             <li>
               <strong>Prepare personal decks.</strong> Each player starts with ten Ships: eight Scouts that produce
-              Trade and two Vipers that produce Combat. Shuffle your deck and place it face down.
+              Trade and two Troopers that produce Combat. Shuffle your deck and place it face down.
             </li>
             <li>
               <strong>Set Authority.</strong> Both players begin at 50 Authority in a standard game. Or host player may
-              choose another starting value
+              choose another starting value.
             </li>
           </RuleList>
+          <p class="mt-4 text-sm leading-6 text-ink-muted">
+            The battle starts automatically when the second player joins. The first player is chosen at random and draws
+            three cards; the second player draws five.
+          </p>
         </RuleSection>
         <RuleSection :section="rulesSections.cards">
           <div class="grid gap-4 sm:grid-cols-3">

@@ -218,6 +218,14 @@ export interface StarfallPersistentAbilityDto {
   action: StarfallActionDto;
 }
 
+export interface StarfallAbilityStateDto {
+  id: string;
+  kind: StarfallAbilityStateDtoKindEnum;
+  action: StarfallActionDto;
+  isUsed: boolean;
+  isAvailable: boolean;
+}
+
 export interface StarfallCardViewDto {
   id: string;
   deck: StarfallCardViewDtoDeckEnum;
@@ -238,9 +246,13 @@ export interface StarfallCardViewDto {
   currentDefense: number | null;
   playedThisTurn: boolean;
   usedAbilities: string[];
+  copiedCardId: string | null;
+  abilityStates: StarfallAbilityStateDto[];
 }
 
 export interface StarfallPlayerViewDto {
+  username: string;
+  nextShipToTop?: boolean;
   id: string;
   hp: number;
   money: number;
@@ -265,6 +277,7 @@ export interface StarfallGameViewDto {
   pendingAction: StarfallPendingActionDto | null;
   tradeRow: StarfallCardViewDto[];
   explorersCount: number;
+  explorer: StarfallCardViewDto | null;
   unusedTradeDeckCount: number;
   scrappedCards: StarfallCardViewDto[];
   players: StarfallPlayerViewDto[];
@@ -291,18 +304,17 @@ export interface JoinStarfallGameDto {
   expectedVersion: number;
 }
 
-export interface StartStarfallGameDto {
-  /**
-   * Unique idempotency key
-   * @example "uuid"
-   */
-  commandId: string;
-  /**
-   * Game state version expected by the client
-   * @min 0
-   * @example 1
-   */
-  expectedVersion: number;
+export interface StarfallLobbyPlayerDto {
+  id: string;
+  username: string;
+}
+
+export interface StarfallLobbyDto {
+  id: string;
+  status: StarfallLobbyDtoStatusEnum;
+  version: number;
+  startingHp: number;
+  players: StarfallLobbyPlayerDto[];
 }
 
 export enum PlayCardCommandDtoTypeEnum {
@@ -394,6 +406,12 @@ export enum StarfallPersistentAbilityDtoTriggerEnum {
   ShipPlayed = "ship_played",
 }
 
+export enum StarfallAbilityStateDtoKindEnum {
+  Primary = "primary",
+  Ally = "ally",
+  Scrap = "scrap",
+}
+
 export enum StarfallCardViewDtoDeckEnum {
   Trade = "trade",
   Explorer = "explorer",
@@ -419,6 +437,12 @@ export enum StarfallGameViewDtoStatusEnum {
   Finished = "finished",
 }
 
+export enum StarfallLobbyDtoStatusEnum {
+  Waiting = "waiting",
+  Active = "active",
+  Finished = "finished",
+}
+
 export interface GetStarfallGamesParams {
   /**
    * Return only games that have not started
@@ -435,7 +459,7 @@ export interface JoinStarfallGameParams {
   gameId: string;
 }
 
-export interface StartStarfallGameParams {
+export interface GetStarfallLobbyParams {
   gameId: string;
 }
 
