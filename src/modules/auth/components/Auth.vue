@@ -7,6 +7,9 @@ import AppCard from '@/components/ui/AppCard.vue';
 import AppInput from '@/components/ui/AppInput.vue';
 import { useAuthStore } from '../useAuth';
 import { useForm } from 'vee-validate';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const store = useAuthStore();
 
@@ -15,7 +18,7 @@ const { validate } = useForm();
 const isSignIn = ref(true);
 const error = ref('');
 
-const formName = computed(() => (isSignIn.value ? 'Sign in' : 'Sign up'));
+const formName = computed(() => (isSignIn.value ? t('sign_in') : 'Sign up'));
 
 const formDescriptionName = computed(() => (isSignIn.value ? 'Create an account' : 'Enter into account'));
 
