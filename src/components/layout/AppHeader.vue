@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import IconLogout from '@/components/icons/IconLogout.vue';
 import IconStar from '@/components/icons/IconStar.vue';
+import LangSwitcher from '@/components/layout/LangSwitcher.vue';
 import AppButton from '@/components/ui/AppButton.vue';
 import { useAuthStore } from '@/modules/auth/useAuth';
 
@@ -22,20 +23,25 @@ const authStore = useAuthStore();
           <IconStar class="size-5" />
         </span>
 
-        <span class="font-display text-lg font-semibold uppercase tracking-[0.16em] text-ink">Starfall</span>
+        <span class="hidden font-display text-lg font-semibold uppercase tracking-[0.16em] text-ink sm:inline">
+          Starfall
+        </span>
       </RouterLink>
 
-      <AppButton
-        variant="ghost"
-        size="sm"
-        aria-label="Log out of Starfall"
-        @click="authStore.logout"
-      >
-        <template #leading>
-          <IconLogout class="size-4" />
-        </template>
-        Logout
-      </AppButton>
+      <div class="flex items-center gap-2 sm:gap-3">
+        <LangSwitcher />
+        <AppButton
+          variant="ghost"
+          size="sm"
+          aria-label="Log out of Starfall"
+          @click="authStore.logout"
+        >
+          <template #leading>
+            <IconLogout class="size-4" />
+          </template>
+          Logout
+        </AppButton>
+      </div>
     </div>
   </header>
 </template>

@@ -2,12 +2,13 @@
 import { computed, ref } from 'vue';
 
 import AppForm from '@/components/forms/AppForm.vue';
+import LangSwitcher from '@/components/layout/LangSwitcher.vue';
 import AppButton from '@/components/ui/AppButton.vue';
 import AppCard from '@/components/ui/AppCard.vue';
 import AppInput from '@/components/ui/AppInput.vue';
 import { useAuthStore } from '../useAuth';
 import { useForm } from 'vee-validate';
-import { useI18n } from 'vue-i18n';
+import { useI18n } from '@/plugins/i18n.ts';
 
 const { t } = useI18n();
 
@@ -74,7 +75,10 @@ const toggleMode = () => {
       class="grid w-full max-w-md gap-5"
     >
       <div class="grid gap-1">
-        <h2 class="font-display text-2xl font-semibold tracking-tight text-ink">{{ formName }}</h2>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="font-display text-2xl font-semibold tracking-tight text-ink">{{ formName }}</h2>
+          <LangSwitcher />
+        </div>
         <p class="text-sm text-ink-muted">{{ formDescriptionName }} to start playing Starfall.</p>
       </div>
 
