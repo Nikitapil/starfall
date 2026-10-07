@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from '@/plugins/i18n';
 import AppPageHeader from '@/components/layout/AppPageHeader.vue';
 import AppCard from '@/components/ui/AppCard.vue';
 import RuleSection from '../components/RuleSection.vue';
@@ -10,19 +11,21 @@ import RulesTurn from '../components/sections/RulesTurn.vue';
 import RulesAbilities from '../components/sections/RulesAbilities.vue';
 import RulesReference from '../components/sections/RulesReference.vue';
 const sections = Object.values(rulesSections);
+
+const { t } = useI18n();
 </script>
 
 <template>
   <div class="w-full pb-24 pt-12 sm:pt-16">
     <AppPageHeader
-      eyebrow="Starfall manual"
-      title="Rules of starfall"
-      description="Everything you need to command a fleet: setup, turn structure, card abilities, combat, and the edge cases that matter when a battle comes down to a single point of Authority."
+      :eyebrow="t('rules.eyebrow')"
+      :title="t('rules.title')"
+      :description="t('rules.description')"
     />
     <div class="mt-10 grid gap-12 lg:grid-cols-[13rem_minmax(0,48rem)] lg:items-start">
       <aside class="lg:sticky lg:top-24">
-        <p class="mb-3 font-mono text-xs uppercase text-ink-faint">On this page</p>
-        <nav aria-label="Rules sections">
+        <p class="mb-3 font-mono text-xs uppercase text-ink-faint">{{ t('rules.onPage') }}</p>
+        <nav :aria-label="t('rules.navigation')">
           <ol class="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
             <li
               v-for="section in sections"
@@ -33,7 +36,7 @@ const sections = Object.values(rulesSections);
                 class="flex items-center gap-2 rounded-control px-2 py-2 text-sm text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink"
               >
                 <span class="font-mono text-[0.65rem] text-ink-faint">{{ section.number }}</span>
-                {{ section.label }}
+                {{ t(section.label) }}
               </a>
             </li>
           </ol>
@@ -42,9 +45,15 @@ const sections = Object.values(rulesSections);
       <article class="min-w-0 space-y-14">
         <RuleSection :section="rulesSections.description">
           <p class="text-base leading-7 text-ink-muted [&_strong]:font-semibold [&_strong]:text-ink">
-            Starfall is a two-player deckbuilding combat game. Each player begins a standard match with
-            <strong>50 Authority</strong>. Generate Combat with your fleet and spend it to reduce the opposing
-            commander’s Authority to zero. The first player to do so wins immediately.
+            <i18n-t
+              keypath="rules.intro"
+              tag="span"
+              scope="global"
+            >
+              <template #emphasis
+                ><strong>{{ t('rules.introEmphasis') }}</strong>
+              </template>
+            </i18n-t>
           </p>
           <AppCard
             padding="sm"
@@ -52,9 +61,9 @@ const sections = Object.values(rulesSections);
           >
             <span class="font-mono text-2xl font-semibold text-success">50</span>
             <div>
-              <strong class="text-ink">Starting Authority</strong>
+              <strong class="text-ink">{{ t('rules.startingAuthority') }}</strong>
               <p class="text-sm text-ink-muted">
-                A game host may choose a different starting value for a custom match.
+                {{ t('rules.customAuthority') }}
               </p>
             </div>
           </AppCard>
@@ -62,40 +71,51 @@ const sections = Object.values(rulesSections);
         <RuleSection :section="rulesSections.setup">
           <RuleList ordered>
             <li>
-              <strong>Prepare personal decks.</strong> Each player starts with ten Ships: eight Scouts that produce
-              Trade and two Troopers that produce Combat. Shuffle your deck and place it face down.
+              <i18n-t
+                keypath="rules.prepare"
+                tag="span"
+                scope="global"
+              >
+                <template #emphasis>
+                  <strong>{{ t('rules.prepareEmphasis') }}</strong>
+                </template>
+              </i18n-t>
             </li>
             <li>
-              <strong>Set Authority.</strong> Both players begin at 50 Authority in a standard game. Or host player may
-              choose another starting value.
+              <i18n-t
+                keypath="rules.setAuthority"
+                tag="span"
+                scope="global"
+              >
+                <template #emphasis>
+                  <strong>{{ t('rules.setAuthorityEmphasis') }}</strong>
+                </template>
+              </i18n-t>
             </li>
           </RuleList>
           <p class="mt-4 text-sm leading-6 text-ink-muted">
-            The battle starts automatically when the second player joins. The first player is chosen at random and draws
-            three cards; the second player draws five.
+            {{ t('rules.autoStart') }}
           </p>
         </RuleSection>
         <RuleSection :section="rulesSections.cards">
           <div class="grid gap-4 sm:grid-cols-3">
-            <RuleInfoCard title="Trade">
-              Spend Trade to acquire Ships and Bases. Unspent Trade disappears at the end of your turn.
+            <RuleInfoCard :title="t('game.terms.trade')">
+              {{ t('rules.tradeDescription') }}
             </RuleInfoCard>
-            <RuleInfoCard title="Combat">
-              Spend Combat to destroy enemy Bases or attack the opposing player. It does not carry over.
+            <RuleInfoCard :title="t('game.terms.combat')">
+              {{ t('rules.combatDescription') }}
             </RuleInfoCard>
-            <RuleInfoCard title="Authority">
-              Your survival total. Healing may raise it above its starting value; there is no normal maximum.
+            <RuleInfoCard :title="t('game.terms.authority')">
+              {{ t('rules.authorityDescription') }}
             </RuleInfoCard>
           </div>
 
           <div class="mt-6 grid gap-4 sm:grid-cols-2">
-            <RuleInfoCard title="Ships">
-              Ships enter play, provide resources or abilities, and remain in your play area for the current turn. At
-              the end of the turn they go to your discard pile.
+            <RuleInfoCard :title="t('game.terms.ships')">
+              {{ t('rules.shipsDescription') }}
             </RuleInfoCard>
-            <RuleInfoCard title="Bases">
-              Bases stay in play between turns and may provide their abilities again on each of your turns. Their
-              Defense shows how much Combat is needed to destroy them.
+            <RuleInfoCard :title="t('game.terms.bases')">
+              {{ t('rules.basesDescription') }}
             </RuleInfoCard>
           </div>
         </RuleSection>
@@ -103,66 +123,68 @@ const sections = Object.values(rulesSections);
         <RulesAbilities />
         <RuleSection :section="rulesSections.bases">
           <RuleList>
-            <li>A Base enters your play area and remains there until destroyed, scrapped, or removed by an effect.</li>
-            <li>To destroy a Base, spend Combat equal to its current Defense.</li>
-            <li>A destroyed Base goes to its owner’s discard pile; it is not permanently removed from the deck.</li>
+            <li>{{ t('rules.baseStays') }}</li>
+            <li>{{ t('rules.baseCost') }}</li>
+            <li>{{ t('rules.baseDiscard') }}</li>
             <li>
-              Combat beyond the required Defense is not assigned automatically. Unspent Combat remains available for
-              another legal target.
+              {{ t('rules.baseExcess') }}
             </li>
             <li>
-              While an opponent controls an <strong>Outpost</strong>, destroy all of their Outposts before attacking
-              that player or any non-Outpost Base they control.
+              <i18n-t
+                keypath="rules.outpostPriority"
+                tag="span"
+                scope="global"
+              >
+                <template #emphasis>
+                  <strong>{{ t('rules.outpostPriorityEmphasis') }}</strong>
+                </template>
+              </i18n-t>
             </li>
           </RuleList>
         </RuleSection>
         <RuleSection :section="rulesSections.factions">
           <p class="text-base leading-7 text-ink-muted [&_strong]:font-semibold [&_strong]:text-ink">
-            Faction is the backbone of deck synergy. Specializing makes Ally abilities more reliable; mixing factions
-            gives you broader tactical options.
+            {{ t('rules.factionDescription') }}
           </p>
           <div class="mt-6 grid gap-4 sm:grid-cols-2">
             <RuleFactionCard
-              title="Blob"
+              :title="t('game.factions.blobs')"
               tone="success"
             >
-              Aggressive Combat, rapid card draw, and effects that scrap undesirable cards from the Trade Row.
+              {{ t('rules.blobDescription') }}
             </RuleFactionCard>
             <RuleFactionCard
-              title="Trade Federation"
+              :title="t('game.factions.trades')"
               tone="accent"
             >
-              Strong Trade generation and Authority recovery, supported by durable economic Bases.
+              {{ t('rules.tradeFactionDescription') }}
             </RuleFactionCard>
             <RuleFactionCard
-              title="Star Empire"
+              :title="t('game.factions.empire')"
               tone="warning"
             >
-              Combat pressure, card draw, and disruption that forces the opponent to discard.
+              {{ t('rules.empireDescription') }}
             </RuleFactionCard>
             <RuleFactionCard
-              title="Machine Cult"
+              :title="t('game.factions.techno')"
               tone="danger"
             >
-              Deck refinement through scrapping, efficient Combat, and resilient Bases.
+              {{ t('rules.machineDescription') }}
             </RuleFactionCard>
           </div>
         </RuleSection>
         <RuleSection :section="rulesSections.deck">
           <RuleList>
-            <li>Newly acquired cards normally go to your discard pile, not your hand.</li>
+            <li>{{ t('rules.acquireDiscard') }}</li>
             <li>
-              Never shuffle early. When you must draw and your deck is empty, shuffle the discard pile to form a new
-              deck, then continue drawing.
+              {{ t('rules.shuffle') }}
             </li>
-            <li>Cards in your discard pile are public information; the order of your face-down deck is not.</li>
+            <li>{{ t('rules.publicDiscard') }}</li>
             <li>
-              Cards sent to the Scrap Heap are removed for the rest of the match unless an effect explicitly retrieves
-              them.
+              {{ t('rules.scrapHeap') }}
             </li>
             <li>
-              Scrapping weak starting cards strengthens future hands, but removing too much Trade can limit later
-              purchases.
+              {{ t('rules.scrapStrategy') }}
             </li>
           </RuleList>
         </RuleSection>
@@ -173,10 +195,9 @@ const sections = Object.values(rulesSections);
             class="relative overflow-hidden p-6 sm:p-8"
           >
             <div class="absolute -right-12 -top-12 size-40 rounded-full border border-danger/10" />
-            <p class="relative font-display text-2xl font-semibold text-ink">Reduce enemy Authority to zero.</p>
+            <p class="relative font-display text-2xl font-semibold text-ink">{{ t('rules.victoryTitle') }}</p>
             <p class="relative mt-3 max-w-2xl text-sm leading-6 text-ink-muted">
-              Victory is immediate. You do not need to finish resolving unused Trade, Combat, or optional effects after
-              the opposing player reaches zero Authority.
+              {{ t('rules.victoryText') }}
             </p>
           </AppCard>
         </RuleSection>

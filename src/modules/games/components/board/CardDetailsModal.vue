@@ -1,11 +1,15 @@
 <script setup lang="ts">
+import { useI18n } from '@/plugins/i18n';
 import AppModal from '@/components/ui/AppModal.vue';
+import { describeAbility } from '../../game-presentation';
 import type { GameCard } from '../../game-types';
 import { describeEffect, factionColors, factionNames } from '../../game-presentation';
 import CardArt from './CardArt.vue';
 
 defineProps<{ card: GameCard; dismissible: boolean }>();
 defineEmits<{ close: [] }>();
+
+const { t } = useI18n();
 </script>
 
 <template>
@@ -21,11 +25,18 @@ defineEmits<{ close: [] }>();
       :class="factionColors[card.fraction]"
     />
     <p class="mt-3 text-sm text-ink-muted">
-      {{ factionNames[card.fraction] }} · {{ card.outpost ? 'Outpost' : card.type }} · Cost {{ card.cost }}
+      {{
+        t('game.cardSummary', {
+          faction: factionNames[card.fraction],
+          type: t(`game.cardTypes.${card.outpost ? 'outpost' : card.type}`),
+          cost: card.cost
+        })
+      }}
     </p>
     <p class="mt-3 font-mono text-sm">
-      {{ card.money }} Trade · {{ card.attack }} Combat<span v-if="card.type === 'base'">
-        · {{ card.currentDefense ?? card.health }} Defense</span
+      {{ t('game.resources.trade', { count: card.money }) }} · {{ t('game.resources.combat', { count: card.attack })
+      }}<span v-if="card.type === 'base'">
+        · {{ t('game.resources.defense', { count: card.currentDefense ?? card.health ?? 0 }) }}</span
       >
     </p>
     <div
@@ -34,7 +45,7 @@ defineEmits<{ close: [] }>();
       class="mt-4 rounded-control border border-line p-3"
     >
       <p class="text-xs font-semibold uppercase text-accent">
-        {{ ability.id.startsWith('copied:') ? 'Copied ' : '' }}{{ ability.kind }}{{ ability.isUsed ? ' · Used' : '' }}
+        {{ describeAbility(ability) }}
       </p>
       <p class="mt-1 text-sm">{{ describeEffect(ability.action) }}</p>
     </div>
@@ -43,7 +54,7 @@ defineEmits<{ close: [] }>();
       :key="index"
       class="mt-4 rounded-control border border-line p-3"
     >
-      <p class="text-xs font-semibold uppercase text-accent">Whenever you play a ship</p>
+      <p class="text-xs font-semibold uppercase text-accent">{{ t('game.abilities.onShip') }}</p>
       <p class="mt-1 text-sm">{{ describeEffect(ability.action) }}</p>
     </div>
   </AppModal>

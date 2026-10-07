@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from '@/plugins/i18n';
 import { computed } from 'vue';
 
 type LoaderSize = 'sm' | 'md' | 'lg';
@@ -11,7 +12,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   size: 'md',
-  label: 'Loading',
+  label: undefined,
   showLabel: true
 });
 
@@ -22,6 +23,8 @@ const sizeClasses: Record<LoaderSize, string> = {
 };
 
 const visualClasses = computed(() => ['starfall-loader__visual', sizeClasses[props.size]]);
+
+const { t } = useI18n();
 </script>
 
 <template>
@@ -99,7 +102,7 @@ const visualClasses = computed(() => ['starfall-loader__visual', sizeClasses[pro
       v-if="showLabel"
       class="font-display text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted"
     >
-      {{ label }}
+      {{ label ?? t('common.loading') }}
       <span
         class="inline-flex w-4 justify-start"
         aria-hidden="true"
@@ -111,7 +114,7 @@ const visualClasses = computed(() => ['starfall-loader__visual', sizeClasses[pro
       v-else
       class="sr-only"
     >
-      {{ label }}
+      {{ label ?? t('common.loading') }}
     </span>
   </div>
 </template>

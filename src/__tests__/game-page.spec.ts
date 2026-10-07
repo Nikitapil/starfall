@@ -3,6 +3,7 @@ import { DOMWrapper, enableAutoUnmount, flushPromises, mount } from '@vue/test-u
 import { createRouter, createMemoryHistory } from 'vue-router';
 import Game from '@/modules/games/pages/Game.vue';
 import { validation } from '@/plugins/validation';
+import { i18n } from '@/plugins/i18n';
 import type { GameCard, GameView } from '@/modules/games/game-types';
 import { deferred, makeCard, makeGame, makeLobby } from './helpers/game-fixtures';
 import { mockDialog } from './helpers/mockDialog';
@@ -48,6 +49,25 @@ const findButton = (wrapper: ReturnType<typeof mount> | DOMWrapper<Element>, lab
   wrapper.findAll('button').find((b) => b.text().includes(label))!;
 
 describe('game page', () => {
+  it('translates an open confirmation and discard pile without sending commands', async () => {
+    const wrapper = await setup();
+    await findButton(wrapper, 'End turn').trigger('click');
+    const dialog = document.querySelector('dialog');
+    expect(dialog?.textContent).toContain('End your turn?');
+    i18n.global.locale.value = 'rus';
+    await flushPromises();
+    expect(document.querySelector('dialog')).toBe(dialog);
+    expect(dialog?.textContent).toContain('Завершить ход?');
+    expect(dialog?.textContent).toContain('Неиспользованные ресурсы исчезнут');
+    await findButton(new DOMWrapper(dialog!), 'Отмена').trigger('click');
+    await findButton(wrapper, 'Сброс').trigger('click');
+    expect(document.querySelector('dialog h2')?.textContent).toBe('Bob · Сброс');
+    i18n.global.locale.value = 'eng';
+    await flushPromises();
+    expect(document.querySelector('dialog h2')?.textContent).toBe('Bob · Discard');
+    expect(api.executeStarfallCommand).not.toHaveBeenCalled();
+  });
+
   it('clears the game transport when the page unmounts', async () => {
     const wrapper = await setup();
     const late = deferred<GameView>();

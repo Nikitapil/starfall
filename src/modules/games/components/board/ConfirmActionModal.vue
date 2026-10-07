@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { useI18n } from '@/plugins/i18n';
 import AppModal from '@/components/ui/AppModal.vue';
 import AppButton from '@/components/ui/AppButton.vue';
 
 defineProps<{ title: string; message: string; loading: boolean; disabled: boolean }>();
 defineEmits<{ close: []; confirm: [] }>();
+
+const { t } = useI18n();
 </script>
 
 <template>
@@ -20,14 +23,14 @@ defineEmits<{ close: []; confirm: [] }>();
         :disabled="loading"
         @click="$emit('close')"
       >
-        Cancel
+        {{ t('common.cancel') }}
       </AppButton>
       <AppButton
         :disabled="disabled"
         :loading="loading"
         @click="$emit('confirm')"
       >
-        Confirm
+        {{ t('common.confirm') }}
       </AppButton>
     </template>
   </AppModal>

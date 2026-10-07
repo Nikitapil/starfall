@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from '@/plugins/i18n';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import AppPageHeader from '@/components/layout/AppPageHeader.vue';
@@ -15,14 +16,16 @@ const router = useRouter();
 const isCreateModalOpen = ref(false);
 
 getGames();
+
+const { t } = useI18n();
 </script>
 
 <template>
   <section class="w-full py-12 sm:py-16">
     <AppPageHeader
-      eyebrow="The next battle starts here"
-      title="Game lobby"
-      description="Browse available games and find your next opponent."
+      :eyebrow="t('lobby.eyebrow')"
+      :title="t('lobby.title')"
+      :description="t('lobby.description')"
     >
       <template #actions>
         <AppButton
@@ -30,7 +33,7 @@ getGames();
           @click="isCreateModalOpen = true"
         >
           <template #leading><span aria-hidden="true">+</span></template>
-          Create game
+          {{ t('lobby.create') }}
         </AppButton>
       </template>
     </AppPageHeader>
@@ -39,7 +42,7 @@ getGames();
       v-if="isLoading"
       class="grid min-h-80 place-items-center py-16"
     >
-      <StarfallLoader label="Loading games" />
+      <StarfallLoader :label="t('lobby.loading')" />
     </div>
 
     <AppCard
@@ -57,8 +60,9 @@ getGames();
         class="mt-5"
         variant="secondary"
         @click="getGames"
-        >Try again</AppButton
       >
+        {{ t('common.retry') }}
+      </AppButton>
     </AppCard>
 
     <AppCard
@@ -71,9 +75,9 @@ getGames();
       >
         <IconStar class="size-8" />
       </span>
-      <h2 class="mt-6 font-display text-2xl font-semibold tracking-tight text-ink">No games available yet</h2>
+      <h2 class="mt-6 font-display text-2xl font-semibold tracking-tight text-ink">{{ t('lobby.emptyTitle') }}</h2>
       <p class="mt-3 max-w-sm text-sm leading-6 text-ink-muted">
-        There are no games waiting for players right now. Check back soon for your next battle.
+        {{ t('lobby.emptyText') }}
       </p>
     </AppCard>
 
@@ -86,10 +90,10 @@ getGames();
           id="available-games"
           class="text-sm font-semibold text-ink"
         >
-          Available games
+          {{ t('lobby.available') }}
         </h2>
         <span class="rounded-full border border-line bg-surface px-3 py-1 font-mono text-xs text-ink-muted">
-          {{ games.length }} {{ games.length === 1 ? 'game' : 'games' }}
+          {{ t('lobby.gameCount', games.length) }}
         </span>
       </div>
 

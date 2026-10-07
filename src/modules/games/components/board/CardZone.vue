@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { useI18n } from '@/plugins/i18n';
 import type { GameCard as Card } from '../../game-types';
 import GameCard from './GameCard.vue';
 defineProps<{ title: string; cards: Card[]; empty?: string }>();
 defineEmits<{ inspect: [card: Card] }>();
+
+const { t } = useI18n();
 </script>
 <template>
   <section
@@ -34,7 +37,7 @@ defineEmits<{ inspect: [card: Card] }>();
       v-else
       class="rounded-panel border border-dashed border-line px-4 py-6 text-sm text-ink-faint"
     >
-      {{ empty ?? 'No cards here yet.' }}
+      {{ empty ?? t('game.emptyZone') }}
     </p>
   </section>
 </template>

@@ -7,6 +7,9 @@ import StarfallLoader from './components/ui/StarfallLoader.vue';
 import Auth from './modules/auth/components/Auth.vue';
 import { useAuthStore } from './modules/auth/useAuth.ts';
 import { subscribeToAuthChanges } from './modules/auth/auth-sync';
+import { useI18n } from '@/plugins/i18n.ts';
+
+const { locale } = useI18n();
 
 const authStore = useAuthStore();
 onUnmounted(subscribeToAuthChanges(() => window.location.reload()));
@@ -14,6 +17,7 @@ onUnmounted(subscribeToAuthChanges(() => window.location.reload()));
 const isInited = ref(false);
 
 (async () => {
+  document.documentElement.lang = locale.value === 'rus' ? 'ru' : 'en';
   await authStore.refreshAuth();
   isInited.value = true;
 })();

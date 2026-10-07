@@ -1,12 +1,25 @@
-import type { StarfallActionDto } from '@/api/swagger/Starfall/data-contracts';
+import { i18n } from '@/plugins/i18n';
+import type { StarfallActionDto, StarfallAbilityStateDto } from '@/api/swagger/Starfall/data-contracts';
 import type { GameCard, GameView } from './game-types';
 
+const { t } = i18n.global;
+
 export const factionNames = {
-  none: 'Unaligned',
-  blobs: 'Blob',
-  trades: 'Trade Federation',
-  empire: 'Star Empire',
-  techno: 'Machine Cult'
+  get none() {
+    return t('game.factions.none');
+  },
+  get blobs() {
+    return t('game.factions.blobs');
+  },
+  get trades() {
+    return t('game.factions.trades');
+  },
+  get empire() {
+    return t('game.factions.empire');
+  },
+  get techno() {
+    return t('game.factions.techno');
+  }
 };
 export const factionColors = {
   none: 'text-ink-muted',
@@ -15,49 +28,69 @@ export const factionColors = {
   empire: 'text-warning',
   techno: 'text-danger'
 };
+export function describeAbility(ability: StarfallAbilityStateDto, actionable = false): string {
+  let label = t(
+    actionable && ability.kind === 'primary' ? 'game.abilities.activate' : `game.abilities.${ability.kind}`
+  );
+  if (ability.id.startsWith('copied:')) label = t('game.abilities.copied', { ability: label });
+  return ability.isUsed ? t('game.abilities.used', { ability: label }) : label;
+}
 export function describeEffect(action: StarfallActionDto): string {
   const count = action.value ?? 1;
   switch (action.name) {
     case 'plus_attack':
-      return `Gain ${count} Combat`;
+      return t('game.effects.combat', { count });
     case 'plus_money':
-      return `Gain ${count} Trade`;
+      return t('game.effects.trade', { count });
     case 'plus_authority':
-      return `Gain ${count} Authority`;
+      return t('game.effects.authority', { count });
     case 'get_cards':
-      return `Draw ${count} ${count === 1 ? 'card' : 'cards'}`;
+      return t('game.effects.draw', count);
     case 'discard_opponent_card':
-      return `Opponent discards ${count} ${count === 1 ? 'card' : 'cards'} at the start of their turn`;
+      return t('game.effects.opponentDiscard', count);
     case 'scrap_card_from_hand':
-      return 'Scrap a card from your hand';
+      return t('game.effects.scrapHand');
     case 'scrap_card_from_pile':
-      return 'Scrap a card from your discard pile';
-    case 'scrap_card_from_hand_or_pile':
-      return `${action.optional ? 'You may scrap up to' : 'Scrap'} ${action.max ?? 1} card(s) from your hand or discard${action.drawPerScrapped ? `; draw ${action.drawPerScrapped} per card scrapped` : ''}`;
+      return t('game.effects.scrapDiscard');
+    case 'scrap_card_from_hand_or_pile': {
+      const scrap = action.optional
+        ? t('game.effects.scrapOptional', { count: action.max ?? 1 })
+        : t('game.effects.scrapRequired', { count: action.max ?? 1 });
+      return action.drawPerScrapped
+        ? t('game.effects.scrapAndDraw', {
+            scrap,
+            draw: t('game.effects.drawPerScrapped', { count: action.drawPerScrapped })
+          })
+        : scrap;
+    }
     case 'scrap_card_from_trade_row':
-      return 'You may scrap a card from the trade row';
+      return t('game.effects.scrapTrade');
     case 'destroy_base':
-      return `${action.optional ? 'You may destroy' : 'Destroy'} an enemy base, ignoring defense and outposts`;
+      return t(action.optional ? 'game.effects.destroyOptional' : 'game.effects.destroy');
     case 'discard_then_draw':
-      return `Discard up to ${action.max ?? 0} cards, then draw that many`;
+      return t('game.effects.discardDraw', { count: action.max ?? 0 });
     case 'put_next_ship_on_top':
-      return 'Put your next purchased ship on top of your deck';
+      return t('game.effects.nextShip');
     case 'acquire_ship_for_free_on_top':
-      return 'Acquire a ship from the trade row for free and put it on top of your deck';
+      return t('game.effects.freeShip');
     case 'copy_ship':
-      return 'Copy another ship you have played this turn';
+      return t('game.effects.copy');
     case 'all_factions_ally':
-      return 'Counts as an ally for every faction';
+      return t('game.effects.allFactions');
     case 'draw_per_faction_card':
-      return `Draw a card for each ${action.fraction ? factionNames[action.fraction] : 'matching'} card in play`;
+      return action.fraction
+        ? t('game.effects.drawFaction', { faction: factionNames[action.fraction] })
+        : t('game.effects.drawMatching');
     case 'sequence':
-      return (action.actions ?? []).map(describeEffect).join('; then ');
+      return (action.actions ?? []).map(describeEffect).join(t('game.effects.then'));
     case 'choose_one':
-      return `Choose one: ${(action.options ?? []).map(describeEffects).join(' OR ')}`;
+      return t('game.effects.choose', {
+        options: (action.options ?? []).map(describeEffects).join(t('game.effects.or'))
+      });
     case 'if_bases_in_play':
-      return `If you have at least ${action.min ?? 0} bases: ${describeEffects(action.actions ?? [])}`;
+      return t('game.effects.ifBases', { count: action.min ?? 0, effects: describeEffects(action.actions ?? []) });
     default:
-      return 'Unknown effect';
+      return t('game.effects.unknown');
   }
 }
 export function describeEffects(actions: StarfallActionDto[]) {
@@ -83,8 +116,8 @@ export function pendingChoices(game: GameView, playerId: string) {
   if (!pending || !player) {
     return null;
   }
-  const hand = (player.hand ?? []).map((card) => ({ card, zone: 'Hand' }));
-  const discard = player.discard.map((card) => ({ card, zone: 'Discard' }));
+  const hand = (player.hand ?? []).map((card) => ({ card, zone: t('game.zones.hand') }));
+  const discard = player.discard.map((card) => ({ card, zone: t('game.zones.discard') }));
   const result = {
     title: '',
     cards: [] as { card: GameCard; zone: string }[],
@@ -97,7 +130,7 @@ export function pendingChoices(game: GameView, playerId: string) {
     case 'choose_cards_to_scrap':
       return {
         ...result,
-        title: 'Choose cards to scrap',
+        title: t('game.choices.scrap'),
         multiple: true,
         min: pending.min ?? 1,
         max: pending.max ?? 1,
@@ -110,7 +143,7 @@ export function pendingChoices(game: GameView, playerId: string) {
     case 'discard_then_draw':
       return {
         ...result,
-        title: 'Discard, then draw',
+        title: t('game.choices.discardDraw'),
         multiple: true,
         min: 0,
         max: pending.max ?? 0,
@@ -121,7 +154,7 @@ export function pendingChoices(game: GameView, playerId: string) {
       const count = Math.min(pending.count ?? 0, hand.length);
       return {
         ...result,
-        title: 'Discard cards before your turn',
+        title: t('game.choices.opponentDiscard'),
         multiple: true,
         min: count,
         max: count,
@@ -131,34 +164,36 @@ export function pendingChoices(game: GameView, playerId: string) {
     case 'choose_trade_card_to_scrap':
       return {
         ...result,
-        title: 'Scrap a trade row card',
+        title: t('game.choices.scrapTrade'),
         canCancel: !!pending.optional,
-        cards: game.tradeRow.map((card) => ({ card, zone: 'Trade row' }))
+        cards: game.tradeRow.map((card) => ({ card, zone: t('game.zones.tradeRow') }))
       };
     case 'choose_base_to_destroy':
       return {
         ...result,
-        title: 'Destroy an enemy base',
+        title: t('game.choices.destroy'),
         canCancel: !!pending.optional,
-        cards: (opponent?.bases ?? []).map((card) => ({ card, zone: 'Enemy base' }))
+        cards: (opponent?.bases ?? []).map((card) => ({ card, zone: t('game.zones.enemyBase') }))
       };
     case 'choose_ship_to_copy':
       return {
         ...result,
-        title: 'Copy a played ship',
+        title: t('game.choices.copy'),
         canCancel: true,
         cards: player.playedShips
           .filter((card) => card.id !== pending.sourceCardId && card.type === 'ship')
-          .map((card) => ({ card, zone: 'Played ship' }))
+          .map((card) => ({ card, zone: t('game.zones.playedShip') }))
       };
     case 'choose_free_ship':
       return {
         ...result,
-        title: 'Acquire a free ship',
+        title: t('game.choices.free'),
         canCancel: true,
-        cards: game.tradeRow.filter((card) => card.type === 'ship').map((card) => ({ card, zone: 'Trade row' }))
+        cards: game.tradeRow
+          .filter((card) => card.type === 'ship')
+          .map((card) => ({ card, zone: t('game.zones.tradeRow') }))
       };
     case 'choose_effect':
-      return { ...result, title: 'Choose an effect' };
+      return { ...result, title: t('game.choices.effect') };
   }
 }

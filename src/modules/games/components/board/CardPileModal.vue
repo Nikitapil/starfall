@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from '@/plugins/i18n';
 import AppModal from '@/components/ui/AppModal.vue';
 import type { GameCard } from '../../game-types';
 import { factionNames } from '../../game-presentation';
@@ -6,6 +7,8 @@ import AppButton from '@/components/ui/AppButton.vue';
 
 defineProps<{ title: string; cards: GameCard[]; dismissible: boolean }>();
 defineEmits<{ close: []; inspect: [card: GameCard] }>();
+
+const { t } = useI18n();
 </script>
 
 <template>
@@ -19,7 +22,7 @@ defineEmits<{ close: []; inspect: [card: GameCard] }>();
       v-if="!cards.length"
       class="text-sm text-ink-muted"
     >
-      No cards here.
+      {{ t('game.emptyPile') }}
     </p>
     <ul class="space-y-2">
       <li

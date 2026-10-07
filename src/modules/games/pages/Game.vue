@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from '@/plugins/i18n';
 import { computed, onMounted, onUnmounted, shallowRef } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/modules/auth/useAuth';
@@ -59,10 +60,11 @@ const allCards = computed(() =>
     : []
 );
 const selectedCard = shallowRef<Card | null>(null);
-const selectedPile = shallowRef<{ title: string; ownerId?: string } | null>(null);
+const selectedPile = shallowRef<{ ownerName: string; ownerId?: string } | null>(null);
 const confirmation = shallowRef<{
-  title: string;
-  message: string;
+  titleKey: string;
+  messageKey: string;
+  params?: { name: string };
   action: GameAction;
   version: number;
 } | null>(null);
@@ -86,7 +88,7 @@ const inspect = (card: Card) => {
   selectedCard.value = card;
 };
 const showDiscard = (ownerId: string, name: string) => {
-  selectedPile.value = { ownerId, title: `${name} · Discard` };
+  selectedPile.value = { ownerId, ownerName: name };
 };
 const hasUnusedOptions = computed(
   () =>
@@ -108,8 +110,9 @@ const requestAction = (action: GameAction) => {
     const card = myCardsInPlay.value.find((c) => c.id === action.payload.cardId);
     if (card?.abilityStates.find((a) => a.id === action.payload.abilityId)?.kind === 'scrap') {
       confirmation.value = {
-        title: `Scrap ${card.name}?`,
-        message: 'This card will be permanently removed from your deck to use its scrap ability.',
+        titleKey: 'game.confirmation.scrapTitle',
+        params: { name: card.name },
+        messageKey: 'game.confirmation.scrapText',
         action,
         version: game.value.version
       };
@@ -118,9 +121,8 @@ const requestAction = (action: GameAction) => {
   }
   if (action.type === 'end_turn' && hasUnusedOptions.value) {
     confirmation.value = {
-      title: 'End your turn?',
-      message:
-        'You still have cards, Combat, purchases or abilities available. Unspent resources will be lost and remaining hand cards discarded.',
+      titleKey: 'game.confirmation.endTitle',
+      messageKey: 'game.confirmation.endText',
       action,
       version: game.value.version
     };
@@ -134,15 +136,17 @@ const confirmAction = async () => {
   await act(action);
   confirmation.value = null;
 };
+
+const { t } = useI18n();
 </script>
 
 <template>
-  <section class="min-w-0 w-full py-6 pb-36 sm:py-8 sm:pb-32">
+  <section class="min-w-0 w-full py-6 pb-60 sm:py-8 sm:pb-32">
     <div
       v-if="isLoading"
       class="grid min-h-80 place-items-center"
     >
-      <StarfallLoader label="Loading game" />
+      <StarfallLoader :label="t('game.loading')" />
     </div>
     <template v-else>
       <AppCard
@@ -156,8 +160,9 @@ const confirmAction = async () => {
           variant="secondary"
           :disabled="isSending"
           @click="refresh"
-          >Try again</AppButton
         >
+          {{ t('common.retry') }}
+        </AppButton>
       </AppCard>
       <AppCard
         v-if="commandError"
@@ -171,8 +176,9 @@ const confirmAction = async () => {
           variant="secondary"
           :loading="isSending"
           @click="retryCommand"
-          >Retry same action</AppButton
         >
+          {{ t('game.retryAction') }}
+        </AppButton>
       </AppCard>
 
       <AppCard
@@ -180,25 +186,25 @@ const confirmAction = async () => {
         class="mx-auto max-w-xl text-center"
         variant="panel"
       >
-        <p class="text-xs uppercase text-accent">Game {{ lobby.id.slice(0, 8) }}</p>
+        <p class="text-xs uppercase text-accent">{{ t('game.name', { id: lobby.id.slice(0, 8) }) }}</p>
         <h2 class="mt-3 text-2xl font-semibold">
-          {{ isWaitingLobby ? 'A seat is waiting for you' : 'This game is unavailable' }}
+          {{ t(isWaitingLobby ? 'game.seat' : 'game.unavailable') }}
         </h2>
         <p class="mt-4 text-ink-muted">{{ lobby.players.map((p) => p.username).join(' · ') }}</p>
         <p class="mt-2 text-sm text-ink-muted">
-          {{ lobby.startingHp }} starting Authority · {{ lobby.players.length }}/2 players
+          {{ t('game.lobbySummary', { hp: lobby.startingHp, players: lobby.players.length }) }}
         </p>
         <p
           v-if="isWaitingLobby"
           class="mt-4 text-sm text-ink-muted"
         >
-          Joining starts the battle immediately. The first player is chosen at random.
+          {{ t('game.joiningHint') }}
         </p>
         <p
           v-else
           class="mt-4 text-sm text-ink-muted"
         >
-          Only participants can open this battle.
+          {{ t('game.participantsOnly') }}
         </p>
         <AppButton
           v-if="isWaitingLobby"
@@ -207,7 +213,7 @@ const confirmAction = async () => {
           :loading="isSending"
           @click="join"
         >
-          Join game
+          {{ t('game.join') }}
         </AppButton>
       </AppCard>
 
@@ -216,13 +222,12 @@ const confirmAction = async () => {
         class="mx-auto max-w-xl text-center"
         variant="panel"
       >
-        <h2 class="mt-4 text-2xl font-semibold">Waiting for an opponent</h2>
+        <h2 class="mt-4 text-2xl font-semibold">{{ t('game.waiting') }}</h2>
         <p class="mt-3 text-sm leading-6 text-ink-muted">
-          Your game is listed in the lobby. Share this page’s address to invite a friend. The battle starts when they
-          join.
+          {{ t('game.invite') }}
         </p>
         <p class="mt-5 text-sm text-ink-muted">
-          {{ game.startingHp }} starting Authority · First player chosen at random
+          {{ t('game.waitingSummary', { hp: game.startingHp }) }}
         </p>
       </AppCard>
 
@@ -236,12 +241,12 @@ const confirmAction = async () => {
           class="text-center"
           role="status"
         >
-          <h2 class="font-display text-3xl font-semibold">{{ isWinner ? 'Victory' : 'Defeat' }}</h2>
+          <h2 class="font-display text-3xl font-semibold">{{ t(isWinner ? 'game.victory' : 'game.defeat') }}</h2>
           <AppButton
             class="mt-4"
             :to="{ name: 'games' }"
           >
-            Back to lobby
+            {{ t('game.back') }}
           </AppButton>
         </AppCard>
 
@@ -252,9 +257,9 @@ const confirmAction = async () => {
         />
         <div class="grid min-w-0 gap-6 xl:grid-cols-2">
           <CardZone
-            title="Enemy bases"
+            :title="t('game.enemyBases')"
             :cards="opponent.bases"
-            empty="No enemy bases."
+            :empty="t('game.noEnemyBases')"
             @inspect="inspect"
           >
             <template #default="{ card }">
@@ -265,28 +270,30 @@ const confirmAction = async () => {
                 :disabled="!canAct || !canAttackBase(game, playerId, card)"
                 @click="requestAction({ type: 'attack_base', payload: { cardId: card.id } })"
               >
-                Attack · {{ card.currentDefense ?? card.health }} Combat
+                {{ t('game.attackBase', { count: card.currentDefense ?? card.health ?? 0 }) }}
               </AppButton>
             </template>
           </CardZone>
           <CardZone
-            title="Enemy ships"
+            :title="t('game.enemyShips')"
             :cards="opponent.playedShips"
             @inspect="inspect"
           />
         </div>
         <section class="min-w-0 rounded-panel border border-line bg-surface/70 p-4 sm:p-5">
           <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <div class="flex gap-2 items-center">
-              <h2 class="font-display text-lg font-semibold">Trade sector</h2>
+            <div class="flex flex-wrap gap-2 items-center">
+              <h2 class="font-display text-lg font-semibold">{{ t('game.tradeSector') }}</h2>
               <p
                 v-if="me.nextShipToTop"
                 class="text-xs text-ink-muted"
               >
-                Your next purchased ship goes on top of your deck.
+                {{ t('game.nextShipHint') }}
               </p>
             </div>
-            <span class="text-xs text-ink-muted">{{ game.unusedTradeDeckCount }} cards in trade deck</span>
+            <span class="text-xs text-ink-muted">{{
+              t('game.tradeDeckCount', { count: game.unusedTradeDeckCount })
+            }}</span>
           </div>
           <div class="flex min-w-0 gap-5 overflow-x-auto pb-2">
             <div class="flex gap-3">
@@ -302,14 +309,14 @@ const confirmAction = async () => {
                   :disabled="!canAct || me.money < card.cost"
                   @click="requestAction({ type: 'buy_card', payload: { cardId: card.id } })"
                 >
-                  Buy · {{ card.cost }} Trade
+                  {{ t('game.buy', { count: card.cost }) }}
                 </AppButton>
               </GameCard>
               <p
                 v-if="!game.tradeRow.length"
                 class="py-8 text-sm text-ink-muted"
               >
-                The trade row is empty.
+                {{ t('game.tradeEmpty') }}
               </p>
             </div>
             <div class="shrink-0 border-l border-line pl-5">
@@ -319,21 +326,23 @@ const confirmAction = async () => {
                 :card="game.explorer"
                 @inspect="inspect"
               >
-                <p class="text-center text-xs text-ink-muted">{{ game.explorersCount }} remaining</p>
+                <p class="text-center text-xs text-ink-muted">
+                  {{ t('game.remaining', { count: game.explorersCount }) }}
+                </p>
                 <AppButton
                   block
                   variant="secondary"
                   :disabled="!canAct || me.money < game.explorer.cost"
                   @click="requestAction({ type: 'buy_card', payload: { cardId: game.explorer.id } })"
                 >
-                  Buy Explorer · {{ game.explorer.cost }}
+                  {{ t('game.buyExplorer', { name: game.explorer.name, cost: game.explorer.cost }) }}
                 </AppButton>
               </GameCard>
               <p
                 v-else
                 class="w-48 py-8 text-sm text-ink-muted"
               >
-                Explorers sold out.
+                {{ t('game.explorersEmpty') }}
               </p>
             </div>
           </div>
@@ -356,7 +365,7 @@ const confirmAction = async () => {
         />
         <div class="grid min-w-0 gap-6 xl:grid-cols-2">
           <CardZone
-            title="Your bases"
+            :title="t('game.yourBases')"
             :cards="me.bases"
             @inspect="inspect"
           >
@@ -370,7 +379,7 @@ const confirmAction = async () => {
             </template>
           </CardZone>
           <CardZone
-            title="Your played ships"
+            :title="t('game.yourShips')"
             :cards="me.playedShips"
             @inspect="inspect"
           >
@@ -385,9 +394,9 @@ const confirmAction = async () => {
           </CardZone>
         </div>
         <CardZone
-          title="Your hand"
+          :title="t('game.yourHand')"
           :cards="me.hand ?? []"
-          empty="Your hand is empty."
+          :empty="t('game.emptyHand')"
           @inspect="inspect"
         >
           <template #default="{ card }">
@@ -396,7 +405,7 @@ const confirmAction = async () => {
               :disabled="!canAct"
               @click="requestAction({ type: 'play_card', payload: { cardId: card.id } })"
             >
-              Play {{ card.type }}
+              {{ t(card.type === 'ship' ? 'game.playShip' : 'game.playBase') }}
             </AppButton>
           </template>
         </CardZone>
@@ -411,30 +420,30 @@ const confirmAction = async () => {
                 class="text-sm font-semibold"
                 role="status"
               >
-                {{ game.pendingAction ? 'Resolve your decision' : isMyTurn ? 'Your turn' : 'Opponent’s turn' }}
+                {{ t(game.pendingAction ? 'game.resolve' : isMyTurn ? 'game.yourTurn' : 'game.opponentTurn') }}
               </p>
               <p class="mt-1 font-mono text-xs">
-                <span class="text-warning">{{ me.money }} Trade</span> ·
-                <span class="text-danger">{{ me.attack }} Combat</span> ·
-                <span class="text-success">{{ me.hp }} Authority</span>
+                <span class="text-warning">{{ t('game.resources.trade', { count: me.money }) }}</span> ·
+                <span class="text-danger">{{ t('game.resources.combat', { count: me.attack }) }}</span> ·
+                <span class="text-success">{{ t('game.resources.authority', { count: me.hp }) }}</span>
               </p>
             </div>
             <div
               v-if="canAct"
-              class="flex gap-4"
+              class="flex flex-wrap gap-3"
             >
               <AppButton
                 v-if="canAttackPlayer"
                 @click="requestAction({ type: 'attack_player', payload: { amount: me.attack } })"
               >
-                Attack {{ opponent.username }} · {{ me.attack }} Combat
+                {{ t('game.attackPlayer', { name: opponent.username, count: me.attack }) }}
               </AppButton>
               <AppButton
                 :loading="isSending"
                 variant="danger"
                 @click="requestAction({ type: 'end_turn', payload: {} })"
               >
-                End turn
+                {{ t('game.endTurn') }}
               </AppButton>
             </div>
           </div>
@@ -443,7 +452,7 @@ const confirmAction = async () => {
     </template>
     <CardPileModal
       v-if="selectedPile"
-      :title="selectedPile.title"
+      :title="t('game.pileTitle', { name: selectedPile.ownerName })"
       :cards="pileCards"
       :dismissible="!isSending"
       @close="selectedPile = null"
@@ -457,8 +466,8 @@ const confirmAction = async () => {
     />
     <ConfirmActionModal
       v-if="confirmation && confirmation.version === game?.version"
-      :title="confirmation.title"
-      :message="confirmation.message"
+      :title="t(confirmation.titleKey, confirmation.params ?? {})"
+      :message="t(confirmation.messageKey)"
       :disabled="!canAct"
       :loading="isSending"
       @close="confirmation = null"

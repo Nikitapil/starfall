@@ -1,15 +1,18 @@
 <script lang="ts" setup>
+import { useI18n } from '@/plugins/i18n';
 import type { StarfallGameListItemDto } from '@/api/swagger/Starfall/data-contracts.ts';
 import IconStar from '@/components/icons/IconStar.vue';
 import AppCard from '@/components/ui/AppCard.vue';
 import { computed } from 'vue';
 import { formatCreatedAt } from '@/helpers/date.ts';
 
+const { t, locale } = useI18n();
+
 const props = defineProps<{
   game: StarfallGameListItemDto;
 }>();
 
-const date = computed(() => formatCreatedAt(props.game.createdAt));
+const date = computed(() => formatCreatedAt(props.game.createdAt, locale.value));
 </script>
 
 <template>
@@ -30,25 +33,27 @@ const date = computed(() => formatCreatedAt(props.game.createdAt));
           <IconStar class="size-5" />
         </span>
         <div class="min-w-0">
-          <h3 class="font-display text-lg font-semibold text-ink">Game #{{ game.id.slice(0, 8) }}</h3>
+          <h3 class="font-display text-lg font-semibold text-ink">
+            {{ t('lobby.gameName', { id: game.id.slice(0, 8) }) }}
+          </h3>
           <p class="mt-1 break-words text-sm text-ink-muted">
-            {{ game.players.length ? game.players.join(' · ') : 'No players yet' }}
+            {{ game.players.length ? game.players.join(' · ') : t('lobby.noPlayers') }}
           </p>
         </div>
       </div>
       <div class="flex shrink-0 items-center justify-between gap-6 sm:text-right">
         <div>
           <p class="text-xs font-medium text-accent">
-            {{ game.players.length }} {{ game.players.length === 1 ? 'player' : 'players' }}
+            {{ t('lobby.playerCount', game.players.length) }}
           </p>
           <p class="mt-1 text-xs text-ink-muted">
-            Created <time :datetime="game.createdAt">{{ date }}</time>
+            {{ t('lobby.created') }} <time :datetime="game.createdAt">{{ date }}</time>
           </p>
         </div>
         <span
           class="text-sm font-semibold text-ink transition-colors group-hover:text-accent group-focus-visible:text-accent"
         >
-          Open <span aria-hidden="true">→</span>
+          {{ t('lobby.open') }} <span aria-hidden="true">→</span>
         </span>
       </div>
     </RouterLink>

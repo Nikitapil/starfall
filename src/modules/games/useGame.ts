@@ -1,5 +1,6 @@
 import { computed, ref, toValue, type MaybeRefOrGetter, type Ref } from 'vue';
 import axios from 'axios';
+import { i18n } from '@/plugins/i18n';
 import { createUuid } from '@/helpers/uuid';
 import { useStarfall } from '@/api/swagger/Starfall/Starfall';
 import type { StarfallLobbyDto } from '@/api/swagger/Starfall/data-contracts';
@@ -16,8 +17,13 @@ export function useGame(gameId: MaybeRefOrGetter<string>, playerId: Ref<string>)
   const isRefreshing = ref(false);
   const isSending = ref(false);
   const isSynced = ref(false);
-  const error = ref('');
-  const commandError = ref('');
+  const errorKey = ref('');
+  const commandErrorKey = ref('');
+  const serverCommandError = ref('');
+  const error = computed(() => (errorKey.value ? i18n.global.t(errorKey.value) : ''));
+  const commandError = computed(
+    () => serverCommandError.value || (commandErrorKey.value ? i18n.global.t(commandErrorKey.value) : '')
+  );
   const terminal = ref(false);
   const uncertainCommand = ref<GameCommand | null>(null);
   const me = computed(() => game.value?.players.find((p) => p.id === playerId.value));
@@ -55,10 +61,10 @@ export function useGame(gameId: MaybeRefOrGetter<string>, playerId: Ref<string>)
   };
   const failureMessage = (cause: unknown) => {
     const status = axios.isAxiosError(cause) ? cause.response?.status : undefined;
-    if (status === 404) return 'This game could not be found.';
-    if (status === 403) return 'You are not a participant in this game.';
-    if (status === 401) return 'Your session could not be verified. Please sign in again.';
-    return 'Connection interrupted. Reconnecting…';
+    if (status === 404) return 'game.errors.notFound';
+    if (status === 403) return 'game.errors.forbidden';
+    if (status === 401) return 'game.errors.session';
+    return 'game.errors.connection';
   };
 
   async function refresh() {
@@ -95,13 +101,13 @@ export function useGame(gameId: MaybeRefOrGetter<string>, playerId: Ref<string>)
         applyGame(next);
       }
       isSynced.value = true;
-      error.value = '';
+      errorKey.value = '';
     } catch (cause) {
       if (readController !== controller || axios.isCancel(cause)) {
         return;
       }
       isSynced.value = false;
-      error.value = failureMessage(cause);
+      errorKey.value = failureMessage(cause);
       const status = axios.isAxiosError(cause) ? cause.response?.status : undefined;
       terminal.value = status === 401 || status === 403 || status === 404;
     } finally {
@@ -123,7 +129,8 @@ export function useGame(gameId: MaybeRefOrGetter<string>, playerId: Ref<string>)
     clearTimer();
     stopRead();
     isSending.value = true;
-    commandError.value = '';
+    commandErrorKey.value = '';
+    serverCommandError.value = '';
     const params = { timeout: REQUEST_TIMEOUT };
     try {
       const next = command
@@ -132,25 +139,24 @@ export function useGame(gameId: MaybeRefOrGetter<string>, playerId: Ref<string>)
       applyGame(next);
       uncertainCommand.value = null;
       isSynced.value = true;
-      error.value = '';
+      errorKey.value = '';
     } catch (cause) {
       const status = axios.isAxiosError(cause) ? cause.response?.status : undefined;
       isSynced.value = false;
       if (status === 409) {
         uncertainCommand.value = null;
-        commandError.value = 'The game changed. Review the updated board and choose your action again.';
+        commandErrorKey.value = 'game.errors.changed';
       } else if (status === 400) {
         uncertainCommand.value = null;
         const message = axios.isAxiosError<{ message?: unknown }>(cause) ? cause.response?.data?.message : undefined;
-        commandError.value = typeof message === 'string' ? message : 'This action is no longer available.';
+        serverCommandError.value = typeof message === 'string' ? message : '';
+        commandErrorKey.value = serverCommandError.value ? '' : 'game.errors.unavailable';
       } else if (status === 401 || status === 403 || status === 404) {
         terminal.value = true;
-        error.value = failureMessage(cause);
+        errorKey.value = failureMessage(cause);
       } else {
         uncertainCommand.value = command;
-        commandError.value = command
-          ? 'The action could not be confirmed. Retry the same action to safely check its result.'
-          : 'Joining could not be confirmed. Refreshing the game…';
+        commandErrorKey.value = command ? 'game.errors.uncertain' : 'game.errors.joining';
       }
     } finally {
       isSending.value = false;

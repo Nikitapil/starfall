@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from '@/plugins/i18n';
 import { ref, useId } from 'vue';
 import AppModal from '@/components/ui/AppModal.vue';
 import IntegerInput from '@/components/ui/IntegerInput.vue';
@@ -24,13 +25,15 @@ const submit = async () => {
     isOpen.value = false;
   }
 };
+
+const { t } = useI18n();
 </script>
 
 <template>
   <AppModal
     v-model="isOpen"
-    title="Create a game"
-    description="Set the starting health for your next battle. Both players begin with the same HP."
+    :title="t('lobby.createTitle')"
+    :description="t('lobby.createDescription')"
     :dismissible="!isLoading"
   >
     <form
@@ -42,13 +45,13 @@ const submit = async () => {
       <IntegerInput
         v-model="startingHp"
         name="startingHp"
-        label="Starting HP"
-        hint="10–500 HP, whole numbers only. The standard game starts at 50."
+        :label="t('lobby.startingHp')"
+        :hint="t('lobby.hpHint')"
         required
         autofocus
         :disabled="isLoading"
         rules="integer|max_value:500|min_value:10|required"
-        validationName="Starting hp"
+        :validationName="t('lobby.hpValidation')"
       />
       <p
         v-if="error"
@@ -63,14 +66,14 @@ const submit = async () => {
         variant="secondary"
         :disabled="isLoading"
         @click="isOpen = false"
-        >Cancel</AppButton
+        >{{ t('common.cancel') }}</AppButton
       >
       <AppButton
         type="submit"
         :form="formId"
         :loading="isLoading"
       >
-        {{ isLoading ? 'Creating game…' : 'Create game' }}
+        {{ t(isLoading ? 'lobby.creating' : 'lobby.create') }}
       </AppButton>
     </template>
   </AppModal>

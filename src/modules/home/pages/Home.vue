@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from '@/plugins/i18n';
 import { useRouter } from 'vue-router';
 
 import IconStar from '@/components/icons/IconStar.vue';
@@ -10,22 +11,24 @@ const router = useRouter();
 const features = [
   {
     number: '01',
-    title: 'Forge your fleet',
-    text: 'Start with a handful of basic ships, then acquire stronger vessels and permanent bases as your deck evolves.'
+    title: 'home.features.fleetTitle',
+    text: 'home.features.fleetText'
   },
   {
     number: '02',
-    title: 'Build alliances',
-    text: 'Combine cards from the same faction to activate ally abilities and turn an ordinary hand into a decisive play.'
+    title: 'home.features.alliesTitle',
+    text: 'home.features.alliesText'
   },
   {
     number: '03',
-    title: 'Break their authority',
-    text: 'Generate combat, breach enemy outposts, destroy their bases, and reduce the opposing commander to zero.'
+    title: 'home.features.combatTitle',
+    text: 'home.features.combatText'
   }
 ] as const;
 
 const openPage = (name: 'games' | 'rules') => router.push({ name });
+
+const { t } = useI18n();
 </script>
 
 <template>
@@ -36,17 +39,16 @@ const openPage = (name: 'games' | 'rules') => router.push({ name });
           class="mb-7 inline-flex items-center gap-2 rounded-full border border-accent/25 bg-accent-soft/60 px-3 py-1.5 font-mono text-xs uppercase text-accent"
         >
           <span class="size-1.5 rounded-full bg-accent shadow-[0_0_10px_var(--color-accent)]" />
-          Tactical deckbuilding online
+          {{ t('home.eyebrow') }}
         </div>
 
         <h1 class="font-display text-5xl font-semibold text-ink sm:text-6xl xl:text-7xl">
-          Build your fleet.<br />
-          <span class="text-accent">Command the stars.</span>
+          {{ t('home.title') }}<br />
+          <span class="text-accent">{{ t('home.titleAccent') }}</span>
         </h1>
 
         <p class="mt-7 max-w-2xl text-base leading-7 text-ink-muted sm:text-lg">
-          Starfall is a head-to-head deckbuilding game of trade, alliances, and orbital warfare. Adapt your fleet every
-          turn, assemble powerful faction synergies, and collapse your rival’s last line of defense.
+          {{ t('home.description') }}
         </p>
 
         <div class="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -54,7 +56,7 @@ const openPage = (name: 'games' | 'rules') => router.push({ name });
             size="lg"
             @click="openPage('games')"
           >
-            Browse games →
+            {{ t('home.browse') }}
           </AppButton>
 
           <AppButton
@@ -62,22 +64,22 @@ const openPage = (name: 'games' | 'rules') => router.push({ name });
             size="lg"
             @click="openPage('rules')"
           >
-            Read the rules
+            {{ t('home.rules') }}
           </AppButton>
         </div>
 
         <dl class="game-characteristics mt-12 grid max-w-xl grid-cols-3 gap-4 border-t border-line pt-6">
           <div>
-            <dt>Format</dt>
-            <dd>1 vs 1</dd>
+            <dt>{{ t('home.format') }}</dt>
+            <dd>{{ t('home.duel') }}</dd>
           </div>
           <div>
-            <dt>Core</dt>
-            <dd>Deckbuilding</dd>
+            <dt>{{ t('home.core') }}</dt>
+            <dd>{{ t('home.deckbuilding') }}</dd>
           </div>
           <div>
-            <dt>Pace</dt>
-            <dd>Turn-based</dd>
+            <dt>{{ t('home.pace') }}</dt>
+            <dd>{{ t('home.turnBased') }}</dd>
           </div>
         </dl>
       </div>
@@ -101,9 +103,9 @@ const openPage = (name: 'games' | 'rules') => router.push({ name });
 
     <section class="border-t border-line py-16 sm:py-20">
       <div class="mb-10 max-w-2xl">
-        <p class="font-mono text-xs uppercase text-accent">One deck. Endless decisions.</p>
+        <p class="font-mono text-xs uppercase text-accent">{{ t('home.featuresEyebrow') }}</p>
         <h2 class="mt-3 font-display text-3xl font-semibold text-ink sm:text-4xl">
-          Every turn reshapes the battlefield
+          {{ t('home.featuresTitle') }}
         </h2>
       </div>
 
@@ -116,8 +118,8 @@ const openPage = (name: 'games' | 'rules') => router.push({ name });
           interactive
         >
           <span class="font-mono text-xs text-accent">// {{ feature.number }}</span>
-          <h3 class="mt-8 font-display text-xl font-semibold text-ink">{{ feature.title }}</h3>
-          <p class="mt-3 text-sm leading-6 text-ink-muted">{{ feature.text }}</p>
+          <h3 class="mt-8 font-display text-xl font-semibold text-ink">{{ t(feature.title) }}</h3>
+          <p class="mt-3 text-sm leading-6 text-ink-muted">{{ t(feature.text) }}</p>
           <div class="mt-8 h-px w-10 bg-line transition-all duration-300 group-hover:w-20 group-hover:bg-accent" />
         </AppCard>
       </div>
@@ -130,11 +132,10 @@ const openPage = (name: 'games' | 'rules') => router.push({ name });
         class="relative overflow-hidden px-6 py-10 sm:px-10 lg:flex lg:items-center lg:justify-between"
       >
         <div class="relative max-w-2xl">
-          <p class="font-mono text-xs uppercase text-accent">Command briefing</p>
-          <h2 class="mt-3 font-display text-3xl font-semibold tracking-tight text-ink">Know the rules.</h2>
+          <p class="font-mono text-xs uppercase text-accent">{{ t('home.briefing') }}</p>
+          <h2 class="mt-3 font-display text-3xl font-semibold tracking-tight text-ink">{{ t('home.knowRules') }}</h2>
           <p class="mt-3 text-sm leading-6 text-ink-muted">
-            Learn the complete turn sequence, card abilities, faction synergies, base combat, and the details that
-            decide close matches.
+            {{ t('home.briefingText') }}
           </p>
         </div>
         <AppButton
@@ -143,7 +144,7 @@ const openPage = (name: 'games' | 'rules') => router.push({ name });
           size="lg"
           @click="openPage('rules')"
         >
-          Open field manual
+          {{ t('home.manual') }}
           <template #trailing><span aria-hidden="true">→</span></template>
         </AppButton>
       </AppCard>

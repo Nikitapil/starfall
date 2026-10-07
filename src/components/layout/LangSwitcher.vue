@@ -4,7 +4,7 @@ import { type Lang } from '@/plugins/domain.ts';
 import { setLangToStorage } from '@/plugins/locale-storage.ts';
 import { useI18n } from '@/plugins/i18n.ts';
 
-const { locale, availableLocales } = useI18n({ useScope: 'global' });
+const { t, locale, availableLocales } = useI18n({ useScope: 'global' });
 
 const labels: Record<Lang, { short: string; name: string; tag: string }> = {
   eng: { short: 'EN', name: 'English', tag: 'en' },
@@ -13,6 +13,7 @@ const labels: Record<Lang, { short: string; name: string; tag: string }> = {
 
 const changeLang = (lang: Lang) => {
   locale.value = lang;
+  document.documentElement.lang = lang === 'rus' ? 'ru' : 'en';
   setLangToStorage(lang);
 };
 </script>
@@ -21,7 +22,7 @@ const changeLang = (lang: Lang) => {
   <div
     class="inline-flex shrink-0 items-center gap-0.5 rounded-control border border-line bg-canvas p-0.5"
     role="group"
-    aria-label="Language"
+    :aria-label="t('common.language')"
   >
     <AppButton
       v-for="lang in availableLocales"

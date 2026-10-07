@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from '@/plugins/i18n';
 import { computed, ref, watch } from 'vue';
 import AppButton from '@/components/ui/AppButton.vue';
 import GameCard from './GameCard.vue';
@@ -49,6 +50,8 @@ const confirm = () => {
         : { cardId: selected.value[0] }
   });
 };
+
+const { t } = useI18n();
 </script>
 <template>
   <section
@@ -56,7 +59,7 @@ const confirm = () => {
     class="min-w-0 rounded-panel border border-accent bg-accent-soft/30 p-4 sm:p-5"
     aria-labelledby="pending-title"
   >
-    <p class="text-xs font-semibold uppercase tracking-widest text-accent">Decision required</p>
+    <p class="text-xs font-semibold uppercase tracking-widest text-accent">{{ t('game.choices.required') }}</p>
     <h2
       id="pending-title"
       class="mt-1 text-lg font-semibold"
@@ -68,14 +71,22 @@ const confirm = () => {
       v-if="!isEffect"
       class="mt-2 text-sm text-ink-muted"
     >
-      Select {{ choices.min === choices.max ? choices.min : `${choices.min}–${choices.max}` }}
-      {{ choices.max === 1 ? 'card' : 'cards' }}. {{ selected.length }} selected.
+      {{
+        t(
+          'game.choices.selection',
+          {
+            range: choices.min === choices.max ? choices.min : `${choices.min}–${choices.max}`,
+            selected: selected.length
+          },
+          choices.max
+        )
+      }}
     </p>
     <div
       v-if="isEffect"
       class="mt-4 grid gap-3"
       role="group"
-      aria-label="Effect options"
+      :aria-label="t('game.choices.options')"
     >
       <AppButton
         v-for="(effects, index) in game.pendingAction?.options"
@@ -109,14 +120,14 @@ const confirm = () => {
           :disabled="disabled || (choices.multiple && !selected.includes(card.id) && selected.length >= choices.max)"
           @click="toggle(card.id)"
         >
-          {{ selected.includes(card.id) ? 'Selected — remove' : 'Select card' }}
+          {{ t(selected.includes(card.id) ? 'game.choices.remove' : 'game.choices.select') }}
         </AppButton>
       </GameCard>
       <p
         v-if="!choices.cards.length"
         class="text-sm text-ink-muted"
       >
-        No eligible cards.
+        {{ t('game.choices.empty') }}
       </p>
     </div>
     <div class="mt-4 flex flex-wrap gap-3">
@@ -125,7 +136,7 @@ const confirm = () => {
         :loading="loading"
         @click="confirm"
       >
-        Confirm choice
+        {{ t('game.choices.confirm') }}
       </AppButton>
       <AppButton
         v-if="choices.canCancel"
@@ -133,7 +144,7 @@ const confirm = () => {
         :disabled="disabled"
         @click="emit('action', { type: 'cancel_pending', payload: {} })"
       >
-        Skip effect
+        {{ t('game.choices.skip') }}
       </AppButton>
     </div>
   </section>

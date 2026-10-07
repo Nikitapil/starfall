@@ -17,15 +17,17 @@ const store = useAuthStore();
 const { validate } = useForm();
 
 const isSignIn = ref(true);
-const error = ref('');
+const isCredentialsError = ref(false);
+const serverError = ref('');
+const error = computed(() => serverError.value || (isCredentialsError.value ? t('auth.wrongCredentials') : ''));
 
-const formName = computed(() => (isSignIn.value ? t('sign_in') : 'Sign up'));
+const formName = computed(() => t(isSignIn.value ? 'auth.signIn' : 'auth.signUp'));
 
-const formDescriptionName = computed(() => (isSignIn.value ? 'Create an account' : 'Enter into account'));
+const formDescriptionName = computed(() => t(isSignIn.value ? 'auth.signInDescription' : 'auth.signUpDescription'));
 
 const changeModeTexts = computed(() => ({
-  text: isSignIn.value ? "Don't have an account?" : 'Already have an accout?',
-  btnText: isSignIn.value ? 'Sign up' : 'Sign in'
+  text: t(isSignIn.value ? 'auth.noAccount' : 'auth.hasAccount'),
+  btnText: t(isSignIn.value ? 'auth.signUp' : 'auth.signIn')
 }));
 
 const form = ref({
@@ -44,7 +46,7 @@ const onSubmit = async () => {
   if (isSignIn.value) {
     const { success } = await store.signin(form.value);
     if (!success) {
-      error.value = 'Wrong email or password';
+      isCredentialsError.value = true;
     }
   } else {
     const { error: responseError } = await store.signup(form.value);
@@ -54,13 +56,14 @@ const onSubmit = async () => {
       'message' in responseError &&
       Array.isArray(responseError.message)
     ) {
-      error.value = responseError.message[0];
+      serverError.value = typeof responseError.message[0] === 'string' ? responseError.message[0] : '';
     }
   }
 };
 
 const toggleMode = () => {
-  error.value = '';
+  isCredentialsError.value = false;
+  serverError.value = '';
   isSignIn.value = !isSignIn.value;
 };
 </script>
@@ -79,7 +82,7 @@ const toggleMode = () => {
           <h2 class="font-display text-2xl font-semibold tracking-tight text-ink">{{ formName }}</h2>
           <LangSwitcher />
         </div>
-        <p class="text-sm text-ink-muted">{{ formDescriptionName }} to start playing Starfall.</p>
+        <p class="text-sm text-ink-muted">{{ formDescriptionName }}</p>
       </div>
 
       <p
@@ -95,10 +98,10 @@ const toggleMode = () => {
           v-model="form.email"
           type="text"
           name="email"
-          label="Email"
-          validationName="Email"
+          :label="t('auth.email')"
+          :validationName="t('auth.email')"
           autocomplete="email"
-          placeholder="Enter your email"
+          :placeholder="t('auth.emailPlaceholder')"
           rules="required|email"
           :loading="store.isAuthLoading"
         />
@@ -108,10 +111,10 @@ const toggleMode = () => {
           v-model="form.username"
           type="text"
           name="username"
-          label="Username"
-          validationName="Username"
+          :label="t('auth.username')"
+          :validationName="t('auth.username')"
           autocomplete="username"
-          placeholder="Enter your username"
+          :placeholder="t('auth.usernamePlaceholder')"
           rules="required"
           :loading="store.isAuthLoading"
         />
@@ -120,10 +123,10 @@ const toggleMode = () => {
           v-model="form.password"
           type="password"
           name="password"
-          label="Password"
-          validationName="Password"
+          :label="t('auth.password')"
+          :validationName="t('auth.password')"
           autocomplete="new-password"
-          placeholder="Enter your password"
+          :placeholder="t('auth.passwordPlaceholder')"
           rules="required"
           :loading="store.isAuthLoading"
         />
@@ -136,12 +139,11 @@ const toggleMode = () => {
           {{ formName }}
         </AppButton>
 
-        <p class="ml-auto">
+        <p class="flex flex-wrap items-center justify-end gap-3 text-sm">
           {{ changeModeTexts.text }}
           <AppButton
             type="button"
             variant="secondary"
-            class="ml-4"
             :disabled="store.isAuthLoading"
             @click="toggleMode"
           >

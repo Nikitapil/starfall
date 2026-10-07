@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from 'vitest';
 
 import AppHeader from '@/components/layout/AppHeader.vue';
 import { useAuthStore } from '@/modules/auth/useAuth';
-import { i18n } from '@/plugins/i18n';
 
 describe('AppHeader', () => {
   it('renders the game title and logs the user out', async () => {
@@ -14,7 +13,7 @@ describe('AppHeader', () => {
     const authStore = useAuthStore();
     const logout = vi.spyOn(authStore, 'logout').mockResolvedValue();
     const wrapper = mount(AppHeader, {
-      global: { plugins: [pinia, i18n] }
+      global: { plugins: [pinia] }
     });
 
     expect(wrapper.text()).toContain('Starfall');

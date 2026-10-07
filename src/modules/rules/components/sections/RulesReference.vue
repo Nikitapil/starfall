@@ -1,50 +1,53 @@
 <script setup lang="ts">
+import { useI18n } from '@/plugins/i18n';
 import RuleSection from '../RuleSection.vue';
 import { rulesSections } from '../../rules-sections';
 import AppCard from '@/components/ui/AppCard.vue';
 import AppButton from '@/components/ui/AppButton.vue';
 const rows = [
   {
-    label: 'Starting deck',
-    value: '8 Scouts + 2 Vipers'
+    label: 'rules.reference.deck',
+    value: 'rules.reference.deckValue'
   },
   {
-    label: 'Starting Authority',
-    value: '50 in a standard match'
+    label: 'rules.reference.authority',
+    value: 'rules.reference.authorityValue'
   },
   {
-    label: 'Trade Row',
-    value: '5 face-up cards, refilled immediately'
+    label: 'rules.reference.trade',
+    value: 'rules.reference.tradeValue'
   },
   {
-    label: 'Opening hands',
-    value: 'First player: 3 cards · Second player: 5 cards'
+    label: 'rules.reference.opening',
+    value: 'rules.reference.openingValue'
   },
   {
-    label: 'Normal hand',
-    value: 'Draw 5 cards at the end of your turn'
+    label: 'rules.reference.hand',
+    value: 'rules.reference.handValue'
   },
   {
-    label: 'Unused resources',
-    value: 'Trade and Combat reset at end of turn'
+    label: 'rules.reference.resources',
+    value: 'rules.reference.resourcesValue'
   },
   {
-    label: 'Ships',
-    value: 'Discard at end of turn'
+    label: 'rules.reference.ships',
+    value: 'rules.reference.shipsValue'
   },
   {
-    label: 'Bases',
-    value: 'Remain in play until destroyed or removed'
+    label: 'rules.reference.bases',
+    value: 'rules.reference.basesValue'
   },
   {
-    label: 'Outposts',
-    value: 'Must be destroyed before other enemy targets'
+    label: 'rules.reference.outposts',
+    value: 'rules.reference.outpostsValue'
   },
   {
-    label: 'Victory',
-    value: 'Enemy Authority reaches 0'
+    label: 'rules.reference.victory',
+    value: 'rules.reference.victoryValue'
   }
 ];
+
+const { t } = useI18n();
 </script>
 
 <template>
@@ -64,21 +67,21 @@ const rows = [
               scope="row"
               class="w-2/5 px-4 py-3.5 font-semibold text-ink"
             >
-              {{ row.label }}
+              {{ t(row.label) }}
             </th>
-            <td class="px-4 py-3.5 text-ink-muted">{{ row.value }}</td>
+            <td class="px-4 py-3.5 text-ink-muted">{{ t(row.value) }}</td>
           </tr>
         </tbody>
       </table>
     </AppCard>
 
     <div class="mt-8 flex flex-wrap gap-3">
-      <AppButton :to="{ name: 'games' }"> Find a game → </AppButton>
+      <AppButton :to="{ name: 'games' }"> {{ t('rules.findGame') }} </AppButton>
       <AppButton
         :to="{ name: 'home' }"
         variant="secondary"
       >
-        Return home
+        {{ t('rules.home') }}
       </AppButton>
     </div>
   </RuleSection>

@@ -1,4 +1,5 @@
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import { i18n } from '@/plugins/i18n';
 import type { StarfallGameListItemDto } from '@/api/swagger/Starfall/data-contracts.ts';
 import { useStarfall } from '@/api/swagger/Starfall/Starfall';
 
@@ -7,15 +8,16 @@ export const useGamesList = () => {
 
   const games = ref<StarfallGameListItemDto[]>([]);
   const isLoading = ref(false);
-  const error = ref('');
+  const isError = ref(false);
+  const error = computed(() => (isError.value ? i18n.global.t('lobby.loadFailed') : ''));
 
   const getGames = async () => {
     isLoading.value = true;
-    error.value = '';
+    isError.value = false;
     try {
       games.value = await getStarfallGames({ notStarted: true });
     } catch {
-      error.value = 'We couldn’t load the games. Please try again.';
+      isError.value = true;
     } finally {
       isLoading.value = false;
     }
