@@ -31,7 +31,7 @@ const { t } = useI18n();
         </span>
       </RouterLink>
 
-      <div class="flex items-center gap-2 sm:gap-3">
+      <div class="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
         <LangSwitcher />
         <AppButton
           variant="ghost"

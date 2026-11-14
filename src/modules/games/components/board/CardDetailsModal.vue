@@ -21,6 +21,7 @@ const { t } = useI18n();
   >
     <CardArt
       :type="card.type"
+      :fraction="card.fraction"
       :outpost="card.outpost"
       :class="factionColors[card.fraction]"
     />
@@ -40,6 +41,29 @@ const { t } = useI18n();
       >
     </p>
     <div
+      v-for="(effect, index) in card.abilities"
+      :key="`primary-${index}`"
+      class="mt-3 text-sm"
+    >
+      <p class="text-xs font-semibold text-accent">{{ t('game.abilities.primary') }}</p>
+      <p>{{ describeEffect(effect) }}</p>
+    </div>
+    <div
+      v-for="(effect, index) in card.matchAbilities"
+      :key="`ally-${index}`"
+      class="mt-3 text-sm"
+    >
+      <p class="text-xs font-semibold text-accent">{{ t('game.abilities.ally') }}</p>
+      <p>{{ describeEffect(effect) }}</p>
+    </div>
+    <div
+      v-if="card.removeAbility"
+      class="mt-3 text-sm"
+    >
+      <p class="text-xs font-semibold text-accent">{{ t('game.abilities.scrap') }}</p>
+      <p>{{ describeEffect(card.removeAbility) }}</p>
+    </div>
+    <div
       v-for="ability in card.abilityStates"
       :key="ability.id"
       class="mt-4 rounded-control border border-line p-3"
@@ -57,5 +81,10 @@ const { t } = useI18n();
       <p class="text-xs font-semibold uppercase text-accent">{{ t('game.abilities.onShip') }}</p>
       <p class="mt-1 text-sm">{{ describeEffect(ability.action) }}</p>
     </div>
+    <template
+      v-if="$slots.actions"
+      #actions
+      ><slot name="actions"
+    /></template>
   </AppModal>
 </template>

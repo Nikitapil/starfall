@@ -129,6 +129,8 @@
     "eyebrow": "Starfall manual",
     "title": "Rules of starfall",
     "description": "Everything you need to command a fleet: setup, turn structure, card abilities, combat, and the edge cases that matter when a battle comes down to a single point of Authority.",
+    "trade": "Trade",
+    "combat": "Combat",
     "navigation": "Rules sections",
     "intro": "Starfall is a two-player deckbuilding combat game. Each player begins a standard match with {emphasis}. Generate Combat with your fleet and spend it to reduce the opposing commander’s Authority to zero. The first player to do so wins immediately.",
     "introEmphasis": "50 Authority",
@@ -214,6 +216,18 @@
     "home": "Return home"
   },
   "game": {
+    "board": {
+      "outposts": "Enemy outposts",
+      "details": "Open full card details",
+      "menu": "Menu",
+      "turn": "Turn {count}",
+      "rules": "Rules",
+      "available": "Action available",
+      "enemyFleet": "Opponent fleet",
+      "effectCombat": "+{count} Combat",
+      "effectTrade": "+{count} Trade",
+      "effectAuthority": "+{count} Authority"
+    },
     "terms": {
       "trade": "Trade",
       "combat": "Combat",
