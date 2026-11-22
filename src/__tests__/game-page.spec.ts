@@ -48,6 +48,10 @@ async function setup() {
 }
 const findButton = (wrapper: ReturnType<typeof mount> | DOMWrapper<Element>, label: string) =>
   wrapper.findAll('button').find((b) => (b.attributes('aria-label') ?? b.text()).includes(label))!;
+const inspectCard = async ({ element }: { element: Element }) => {
+  element.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+  await vi.waitFor(() => expect(document.querySelector('dialog')).not.toBeNull());
+};
 const doubleClick = async ({ element }: { element: Element }) => {
   element.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
   await nextTick();
@@ -93,13 +97,13 @@ describe('game page', () => {
   });
   it('renders all zones with SVG art and sends a play command', async () => {
     const wrapper = await setup();
-    expect(wrapper.text()).toContain('Your hand');
-    expect(wrapper.text()).toContain('Trade sector');
+    expect(wrapper.get('.hand-zone').attributes('aria-label')).toBe('Your hand');
+    expect(wrapper.get('.market-lane').attributes('aria-label')).toBe('Trade sector');
     expect(wrapper.text()).toContain('Alice');
     expect(wrapper.text()).toContain('Bob');
     expect(wrapper.findAll('img')).toHaveLength(0);
     expect(wrapper.findAll('svg').length).toBeGreaterThan(0);
-    await wrapper.get('button[aria-label="View Scout details"]').trigger('click');
+    await inspectCard(wrapper.get('button[aria-label="View Scout details"]'));
     await findButton(new DOMWrapper(document.querySelector('dialog')!), 'Play ship').trigger('click');
     await flushPromises();
     expect(api.executeStarfallCommand.mock.calls[0]![1]).toMatchObject({
@@ -130,7 +134,7 @@ describe('game page', () => {
     );
     const wrapper = await setup();
     expect(wrapper.get('[aria-labelledby="pending-title"]').isVisible()).toBe(true);
-    await wrapper.get('button[aria-label="View Scout details"]').trigger('click');
+    await inspectCard(wrapper.get('button[aria-label="View Scout details"]'));
     const details = new DOMWrapper(document.querySelector('dialog')!);
     expect(findButton(details, 'Play ship').attributes('disabled')).toBeDefined();
     await details.trigger('cancel');
@@ -188,14 +192,14 @@ describe('game page', () => {
     api.getStarfallGame.mockResolvedValue(game);
     const wrapper = await setup();
     const detailsButton = wrapper.get('button[aria-label="View Scout details"]');
-    await detailsButton.trigger('click');
+    await inspectCard(detailsButton);
     expect(document.querySelector('dialog')?.textContent).toContain('Draw 2 cards');
     expect(api.executeStarfallCommand).not.toHaveBeenCalled();
   });
 
   it('buys an explorer by instance id', async () => {
     const wrapper = await setup();
-    await wrapper.get('button[aria-label="View Explorer details"]').trigger('click');
+    await inspectCard(wrapper.get('button[aria-label="View Explorer details"]'));
     await findButton(new DOMWrapper(document.querySelector('dialog')!), 'Buy').trigger('click');
     await flushPromises();
     expect(api.executeStarfallCommand.mock.calls[0]![1]).toMatchObject({
@@ -315,7 +319,7 @@ describe('game page', () => {
   });
   it('updates open card details from the latest game snapshot', async () => {
     const wrapper = await setup();
-    await wrapper.get('[aria-label="View Scout details"]').trigger('click');
+    await inspectCard(wrapper.get('[aria-label="View Scout details"]'));
     const updated = makeGame({ version: 2 });
     updated.players[0]!.hand![0]!.money = 3;
     api.getStarfallGame.mockResolvedValue(updated);
@@ -372,12 +376,12 @@ describe('game page', () => {
     ];
     api.getStarfallGame.mockResolvedValue(state);
     const wrapper = await setup();
-    await wrapper.get('button[aria-label="View Explorer details"]').trigger('click');
+    await inspectCard(wrapper.get('button[aria-label="View Explorer details"]'));
     const purchase = new DOMWrapper(document.querySelector('dialog')!);
     expect(findButton(purchase, 'Buy').attributes('disabled')).toBeDefined();
     await purchase.trigger('cancel');
     expect(wrapper.findAll('button').some((button) => button.text().includes('Attack Bob'))).toBe(false);
-    await wrapper.get('.enemy-lane .table-card').trigger('click');
+    await inspectCard(wrapper.get('.enemy-lane .table-card'));
     expect(
       findButton(new DOMWrapper(document.querySelector('dialog')!), 'Attack ·').attributes('disabled')
     ).toBeDefined();
@@ -400,7 +404,7 @@ describe('game page', () => {
     ];
     api.getStarfallGame.mockResolvedValue(game);
     const wrapper = await setup();
-    await wrapper.get('.own-lane .table-card').trigger('click');
+    await inspectCard(wrapper.get('.own-lane .table-card'));
     await findButton(new DOMWrapper(document.querySelector('dialog')!), 'Scrap:').trigger('click');
     expect(document.querySelectorAll('dialog')).toHaveLength(1);
     expect(document.querySelector('dialog')?.textContent).toContain('Scrap Scout?');
@@ -425,7 +429,7 @@ describe('game page', () => {
     const wrapper = await setup();
     expect(wrapper.text()).toContain('Victory');
     expect(wrapper.text()).not.toContain('End turn');
-    await wrapper.get('button[aria-label="View Scout details"]').trigger('click');
+    await inspectCard(wrapper.get('button[aria-label="View Scout details"]'));
     const details = new DOMWrapper(document.querySelector('dialog')!);
     expect(findButton(details, 'Play ship').attributes('disabled')).toBeDefined();
     await details.trigger('cancel');

@@ -199,7 +199,10 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <section class="game-page min-w-0 w-full">
+  <section
+    class="game-page min-w-0 w-full"
+    :class="{ 'has-table': game && game.status !== 'waiting' && me && opponent }"
+  >
     <header class="table-toolbar">
       <AppButton
         variant="ghost"
@@ -209,16 +212,11 @@ const { t } = useI18n();
       >
       <p
         v-if="game?.status === 'active'"
-        class="text-xs text-accent"
+        class="turn-state text-accent"
         role="status"
       >
         {{ t(game.pendingAction ? 'game.resolve' : isMyTurn ? 'game.yourTurn' : 'game.opponentTurn') }}
       </p>
-      <span
-        v-if="game"
-        class="text-xs font-mono text-ink-muted"
-        >{{ t('game.board.turn', { count: game.turnNumber }) }}</span
-      >
     </header>
     <div
       v-if="isLoading"
@@ -230,7 +228,7 @@ const { t } = useI18n();
       <AppCard
         v-if="error"
         variant="danger"
-        class="shrink-0"
+        class="session-message shrink-0"
       >
         <p role="alert">{{ error }}</p>
         <AppButton
@@ -244,7 +242,7 @@ const { t } = useI18n();
       </AppCard>
       <AppCard
         v-if="commandError"
-        class="shrink-0"
+        class="session-message shrink-0"
         variant="danger"
       >
         <p role="alert">{{ commandError }}</p>
@@ -313,60 +311,46 @@ const { t } = useI18n();
         v-if="game && game.status !== 'waiting' && me && opponent"
         class="game-table"
       >
-        <PlayerStatus
-          class="opponent-status"
-          :player="opponent"
-          :active="game.status === 'active' && !isMyTurn"
-          @discard="showDiscard(opponent.id, opponent.username)"
-        />
+        <div class="opponent-area">
+          <PlayerStatus
+            class="opponent-status"
+            :player="opponent"
+            :active="game.status === 'active' && !isMyTurn"
+            @discard="showDiscard(opponent.id, opponent.username)"
+          />
 
-        <section
-          class="fleet-lane enemy-lane"
-          :aria-label="t('game.board.enemyFleet')"
-        >
-          <h2 class="zone-label">
-            {{ t('game.board.enemyFleet') }} <span>{{ enemyCards.length }}</span
-            ><span
-              v-if="protectedByOutpost"
-              class="text-warning"
-            >
-              · {{ t('game.board.outposts') }}</span
-            >
-          </h2>
-          <div
-            v-if="enemyCards.length"
-            class="fleet-cards"
-            :style="{ '--cards': enemyCards.length }"
+          <section
+            class="fleet-lane enemy-lane"
+            :aria-label="t('game.board.enemyFleet')"
           >
-            <TableCard
-              v-for="card in enemyCards"
-              :key="card.id"
-              :card="card"
-              :actionable="card.type === 'base' && canAct && canAttackBase(game, playerId, card)"
-              @inspect="inspect"
-              @activate="activateCard"
-            />
-          </div>
-          <p
-            v-else
-            class="empty-lane"
-          >
-            {{ t('game.noEnemyBases') }}
-          </p>
-        </section>
+            <div
+              v-if="enemyCards.length"
+              class="fleet-cards"
+              :style="{ '--cards': enemyCards.length }"
+            >
+              <TableCard
+                v-for="card in enemyCards"
+                :key="card.id"
+                :card="card"
+                in-play
+                :actionable="card.type === 'base' && canAct && canAttackBase(game, playerId, card)"
+                @inspect="inspect"
+                @activate="activateCard"
+              />
+            </div>
+          </section>
+        </div>
 
         <section
           class="market-lane"
           :aria-label="t('game.tradeSector')"
         >
-          <div class="zone-label">
-            <h2>{{ t('game.tradeSector') }}</h2>
-            <span
-              :title="t('game.tradeDeckCount', { count: game.unusedTradeDeckCount })"
-              :aria-label="t('game.tradeDeckCount', { count: game.unusedTradeDeckCount })"
-              ><IconGameResource kind="deck" />{{ game.unusedTradeDeckCount }}</span
-            >
-          </div>
+          <span
+            class="trade-deck-count"
+            :title="t('game.tradeDeckCount', { count: game.unusedTradeDeckCount })"
+            :aria-label="t('game.tradeDeckCount', { count: game.unusedTradeDeckCount })"
+            ><IconGameResource kind="deck" />{{ game.unusedTradeDeckCount }}</span
+          >
           <div class="market-cards">
             <TableCard
               v-for="card in marketCards"
@@ -378,138 +362,154 @@ const { t } = useI18n();
               @inspect="inspect"
               @activate="activateCard"
             />
-            <p
-              v-if="!marketCards.length"
-              class="empty-lane"
-            >
-              {{ t('game.tradeEmpty') }}
-            </p>
           </div>
           <p
             v-if="me.nextShipToTop"
-            class="text-xs text-accent"
+            class="market-hint text-accent"
           >
             {{ t('game.nextShipHint') }}
           </p>
         </section>
 
-        <section
-          class="fleet-lane own-lane"
-          :aria-label="t('game.yourFleet')"
-        >
-          <h2 class="zone-label">
-            {{ t('game.yourFleet') }} <span>{{ myCardsInPlay.length }}</span>
-          </h2>
-          <div
-            v-if="myCardsInPlay.length"
-            class="fleet-cards"
-            :style="{ '--cards': myCardsInPlay.length }"
+        <div class="player-area">
+          <section
+            class="fleet-lane own-bases"
+            :aria-label="t('game.yourBases')"
           >
-            <TableCard
-              v-for="card in myCardsInPlay"
-              :key="card.id"
-              :card="card"
-              :actionable="hasAvailableAbility(card)"
-              @inspect="inspect"
-              @activate="activateCard"
-            />
-          </div>
-          <p
-            v-else
-            class="empty-lane"
-          >
-            {{ t('game.emptyZone') }}
-          </p>
-        </section>
-
-        <PlayerStatus
-          class="own-status"
-          :player="me"
-          :active="isMyTurn"
-          own
-          @discard="showDiscard(me.id, me.username)"
-        />
-
-        <section
-          class="hand-zone"
-          :aria-label="t('game.yourHand')"
-        >
-          <h2 class="zone-label">
-            {{ t('game.yourHand') }} <span>{{ me.hand?.length ?? 0 }}</span>
-          </h2>
-          <div
-            v-if="me.hand?.length"
-            class="hand-cards"
-            :style="{ '--cards': me.hand.length }"
-          >
-            <TableCard
-              v-for="card in me.hand"
-              :key="card.id"
-              :card="card"
-              :actionable="canAct"
-              @inspect="inspect"
-              @activate="activateCard"
-            />
-          </div>
-          <p
-            v-else
-            class="empty-lane"
-          >
-            {{ t('game.emptyHand') }}
-          </p>
-        </section>
-
-        <footer class="turn-bar">
-          <div class="turn-resources">
-            <span
-              class="resource-token text-warning"
-              :title="t('game.terms.trade')"
-              :aria-label="t('game.resources.trade', { count: me.money })"
-              ><IconGameResource kind="trade" />{{ me.money }}</span
+            <div
+              v-if="me.bases.length"
+              class="base-cards"
+              :style="{ '--base-rows': Math.min(me.bases.length, 2) }"
             >
+              <TableCard
+                v-for="card in me.bases"
+                :key="card.id"
+                :card="card"
+                in-play
+                :actionable="hasAvailableAbility(card)"
+                @inspect="inspect"
+                @activate="activateCard"
+              />
+            </div>
+          </section>
+
+          <section
+            class="fleet-lane own-lane"
+            :aria-label="t('game.yourShips')"
+          >
+            <div
+              v-if="me.playedShips.length"
+              class="fleet-cards"
+              :style="{ '--cards': me.playedShips.length }"
+            >
+              <TableCard
+                v-for="card in me.playedShips"
+                :key="card.id"
+                :card="card"
+                in-play
+                :actionable="hasAvailableAbility(card)"
+                @inspect="inspect"
+                @activate="activateCard"
+              />
+            </div>
+          </section>
+
+          <PlayerStatus
+            class="own-status"
+            :player="me"
+            :active="isMyTurn"
+            own
+            @discard="showDiscard(me.id, me.username)"
+          />
+
+          <section
+            class="hand-zone"
+            :aria-label="t('game.yourHand')"
+          >
+            <div
+              v-if="me.hand?.length"
+              class="hand-cards"
+              :style="{ '--cards': me.hand.length }"
+            >
+              <TableCard
+                v-for="card in me.hand"
+                :key="card.id"
+                :card="card"
+                :actionable="canAct"
+                @inspect="inspect"
+                @activate="activateCard"
+              />
+            </div>
+          </section>
+
+          <footer class="turn-bar">
+            <div class="turn-resources">
+              <span
+                class="resource-token text-warning"
+                :title="t('game.terms.trade')"
+                :aria-label="t('game.resources.trade', { count: me.money })"
+              >
+                <IconGameResource kind="trade" />
+                {{ me.money }}
+              </span>
+              <AppButton
+                v-if="canAttackPlayer"
+                class="attack-token text-danger"
+                variant="secondary"
+                :aria-label="t('game.attackPlayer', { name: opponent.username, count: me.attack })"
+                :title="t('game.attackPlayer', { name: opponent.username, count: me.attack })"
+                @click="requestAction({ type: 'attack_player', payload: { amount: me.attack } })"
+              >
+                <template #leading><IconGameResource kind="combat" /></template>
+                {{ me.attack }}
+                <span
+                  class="attack-arrow"
+                  aria-hidden="true"
+                >
+                  ↗
+                </span>
+              </AppButton>
+              <span
+                v-else
+                class="resource-token text-danger"
+                :title="t('game.terms.combat')"
+                :aria-label="t('game.resources.combat', { count: me.attack })"
+              >
+                <IconGameResource kind="combat" />
+                {{ me.attack }}
+              </span>
+            </div>
+            <p
+              v-if="protectedByOutpost"
+              class="outpost-hint text-warning"
+            >
+              {{ t('game.board.outposts') }}
+            </p>
             <AppButton
-              v-if="canAttackPlayer"
-              class="attack-token text-danger"
+              v-if="game.status === 'active'"
+              :disabled="!canAct"
+              :loading="isSending"
+              class="end-turn"
               variant="secondary"
-              :aria-label="t('game.attackPlayer', { name: opponent.username, count: me.attack })"
-              :title="t('game.attackPlayer', { name: opponent.username, count: me.attack })"
-              @click="requestAction({ type: 'attack_player', payload: { amount: me.attack } })"
-              ><template #leading><IconGameResource kind="combat" /></template>{{ me.attack
-              }}<span
-                class="attack-arrow"
-                aria-hidden="true"
-                >↗</span
-              ></AppButton
+              @click="requestAction({ type: 'end_turn', payload: {} })"
             >
-            <span
+              {{ t('game.endTurn') }}
+            </AppButton>
+            <div
               v-else
-              class="resource-token text-danger"
-              :title="t('game.terms.combat')"
-              :aria-label="t('game.resources.combat', { count: me.attack })"
-              ><IconGameResource kind="combat" />{{ me.attack }}</span
+              class="text-center"
+              role="status"
             >
-          </div>
-          <AppButton
-            v-if="game.status === 'active'"
-            :disabled="!canAct"
-            :loading="isSending"
-            class="end-turn"
-            @click="requestAction({ type: 'end_turn', payload: {} })"
-            >{{ t('game.endTurn') }}</AppButton
-          >
-          <div
-            v-else
-            class="text-center"
-            role="status"
-          >
-            <h2 class="font-semibold text-accent">{{ t(isWinner ? 'game.victory' : 'game.defeat') }}</h2>
-            <AppButton
-              variant="ghost"
-              :to="{ name: 'games' }"
-              >{{ t('game.back') }}</AppButton
-            >
-          </div>
-        </footer>
+              <h2 class="font-semibold text-accent">{{ t(isWinner ? 'game.victory' : 'game.defeat') }}</h2>
+              <AppButton
+                variant="ghost"
+                :to="{ name: 'games' }"
+              >
+                {{ t('game.back') }}
+              </AppButton>
+            </div>
+          </footer>
+        </div>
 
         <div
           v-if="game.pendingAction?.playerId === playerId"
@@ -579,22 +579,31 @@ const { t } = useI18n();
       @update:model-value="menuOpen = false"
     >
       <div class="flex flex-col gap-3">
+        <p
+          v-if="game"
+          class="text-sm text-ink-muted"
+        >
+          {{ t('game.board.turn', { count: game.turnNumber }) }}
+        </p>
         <LangSwitcher class="self-start" />
         <AppButton
           :to="{ name: 'games' }"
           variant="secondary"
-          >{{ t('game.back') }}</AppButton
         >
+          {{ t('game.back') }}
+        </AppButton>
         <AppButton
           :to="{ name: 'rules' }"
           variant="secondary"
-          >{{ t('game.board.rules') }}</AppButton
         >
+          {{ t('game.board.rules') }}
+        </AppButton>
         <AppButton
           variant="ghost"
           @click="auth.logout()"
-          >{{ t('common.logout') }}</AppButton
-        >
+          >
+          {{ t('common.logout') }}
+        </AppButton>
       </div>
     </AppModal>
     <ConfirmActionModal
@@ -611,171 +620,218 @@ const { t } = useI18n();
 
 <style scoped>
 .game-page {
+  --table-scale: clamp(0.5rem, min(1.4vw, 2.5dvh), 1rem);
+  position: relative;
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  padding: max(0.25rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right))
+  gap: 0.5rem;
+  padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right))
     max(0.5rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left));
 }
 .table-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  flex-shrink: 0;
+  flex: none;
+}
+.has-table .table-toolbar {
+  position: absolute;
+  top: max(0.5rem, env(safe-area-inset-top));
+  left: max(0.5rem, env(safe-area-inset-left));
+  z-index: 2;
 }
 .menu-button {
-  padding-inline: 0.5rem;
+  padding-inline: 0.75em;
+  font-size: max(0.6875rem, var(--table-scale));
+}
+.has-table .session-message {
+  margin-left: 6rem;
 }
 .game-table {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 5rem;
-  grid-template-rows:
-    minmax(min-content, 0.65fr) minmax(min-content, 2fr) minmax(min-content, 0.65fr) minmax(min-content, 1fr)
-    auto;
-  gap: 0.3rem;
+  grid-template-rows: minmax(4rem, 18fr) minmax(0, 34fr) minmax(9rem, 48fr);
+  gap: 0.65em;
   flex: 1;
-  min-height: 30rem;
+  min-height: 0;
   min-width: 0;
+  width: min(100%, 90em);
+  margin-inline: auto;
+  font-size: var(--table-scale);
   background: radial-gradient(
     ellipse at 50% 42%,
     color-mix(in srgb, var(--color-accent-soft) 35%, transparent),
     transparent 70%
   );
 }
+.opponent-area {
+  display: grid;
+  grid-template-columns: 14em minmax(0, 1fr);
+  gap: 2em;
+  min-height: 0;
+  padding-left: 8em;
+  padding-right: 7em;
+}
 .opponent-status {
-  grid-row: 1;
-  grid-column: 2;
+  align-self: center;
 }
-.enemy-lane {
-  grid-row: 1;
+.player-area {
+  display: grid;
+  grid-template-columns: max(116px, 13em) minmax(0, 1fr) 12em;
+  grid-template-rows: minmax(7.5em, 42fr) minmax(0, 58fr);
+  gap: 0.7em 1.25em;
+  min-height: 0;
+}
+.own-bases {
   grid-column: 1;
-}
-.market-lane {
-  grid-row: 2;
-  grid-column: 1 / -1;
+  grid-row: 1 / -1;
 }
 .own-lane {
-  grid-row: 3;
-  grid-column: 1;
-}
-.own-status {
-  grid-row: 3;
   grid-column: 2;
+  grid-row: 1;
 }
 .hand-zone {
-  grid-row: 4;
-  grid-column: 1 / -1;
+  grid-column: 2;
+  grid-row: 2;
+}
+.own-status {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: start;
 }
 .turn-bar {
-  grid-row: 5;
-  grid-column: 1 / -1;
+  grid-column: 3;
+  grid-row: 1 / -1;
+  align-self: end;
 }
 .fleet-lane,
 .market-lane,
 .hand-zone {
+  position: relative;
   min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-}
-.zone-label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.25rem;
-  color: var(--color-ink-muted);
-  font-size: 0.6rem;
-  font-weight: 500;
-  line-height: 1.2;
-}
-.zone-label > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  font-family: var(--font-mono);
-}
-.zone-label svg {
-  width: 0.8rem;
-  height: 0.8rem;
 }
 .fleet-cards,
-.hand-cards {
-  display: grid;
-  grid-template-columns: repeat(var(--cards), minmax(2.75rem, 8rem));
-  justify-content: safe center;
-  gap: 0.2rem;
-  min-height: min-content;
-  flex: 1;
-  overflow: auto;
-  padding: 2px;
-}
-.fleet-cards {
-  grid-template-columns: repeat(var(--cards), minmax(6.875rem, 8rem));
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: thin;
-}
+.hand-cards,
+.base-cards,
 .market-cards {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-auto-rows: minmax(min-content, 1fr);
-  gap: 0.3rem;
+  gap: 0.45em;
+  min-width: 0;
   min-height: 0;
   flex: 1;
-  padding: 2px;
+  padding: 3px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
-.empty-lane {
-  align-self: center;
+.fleet-cards {
+  grid-template-columns: repeat(var(--cards), minmax(110px, 14em));
+  grid-template-rows: minmax(0, 1fr);
+  justify-content: safe center;
+}
+.base-cards {
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(110px, 1fr);
+  grid-template-rows: repeat(var(--base-rows), minmax(0, 1fr));
+  height: 100%;
+  max-height: calc(var(--base-rows) * 7em + (var(--base-rows) - 1) * 0.45em + 6px);
+  flex: none;
   margin-block: auto;
-  color: var(--color-ink-faint);
-  font-size: 0.65rem;
+}
+.hand-cards {
+  grid-template-columns: repeat(var(--cards), minmax(8.5em, 10em));
+  grid-template-rows: minmax(0, 1fr);
+  justify-content: safe center;
 }
 .market-lane {
-  border-block: 1px solid var(--color-line);
-  padding-block: 0.35rem;
+  padding-inline: 6em;
+}
+.market-cards {
+  grid-template-columns: repeat(6, minmax(0, 12em));
+  grid-template-rows: minmax(0, 1fr);
+  justify-content: center;
+  gap: 0.75em;
+}
+.trade-deck-count {
+  position: absolute;
+  right: 1em;
+  bottom: 0.5em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2em;
+  color: var(--color-ink-faint);
+  font: 0.8em var(--font-mono);
+}
+.trade-deck-count svg {
+  width: 1.2em;
+  height: 1.2em;
+}
+.market-hint {
+  position: absolute;
+  bottom: 100%;
+  left: 6em;
+  font-size: 0.75em;
 }
 .turn-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
   min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: end;
+  gap: 0.5em;
+}
+.turn-state,
+.outpost-hint {
+  font-size: 0.75em;
+  line-height: 1.15;
+  text-align: center;
+}
+.turn-state {
+  max-width: 8em;
+  margin-inline: auto;
+  font-size: max(0.5625rem, calc(var(--table-scale) * 0.75));
 }
 .turn-resources {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 0.5em;
 }
 .resource-token,
 .attack-token {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.2rem;
-  font: 600 1.2rem var(--font-mono);
+  gap: 0.2em;
+  min-height: 2.75rem;
+  font: 600 1.5em var(--font-mono);
 }
 .resource-token svg,
 .attack-token :deep(svg) {
-  width: 1.2rem;
-  height: 1.2rem;
+  width: 1em;
+  height: 1em;
 }
 .attack-token {
   min-width: 2.75rem;
-  padding-inline: 0.35rem;
+  padding-inline: 0.3em;
   border-color: var(--color-danger);
   color: var(--color-danger);
 }
 .attack-arrow {
-  font-size: 0.7rem;
-  margin-left: 0.2rem;
+  font-size: 0.5em;
+  margin-left: 0.1em;
 }
 .end-turn {
+  width: 100%;
   min-width: 0;
   overflow-wrap: anywhere;
+  padding-inline: 0.5em;
+  border-color: var(--color-accent);
+  font-size: max(0.6875rem, 0.9em);
+  color: var(--color-accent);
 }
 .pending-overlay {
   position: absolute;
@@ -784,119 +840,82 @@ const { t } = useI18n();
   left: 50%;
   transform: translateX(-50%);
   width: min(100%, 46rem);
-  max-height: 75%;
+  max-height: 90%;
   overflow: auto;
   background: var(--color-surface);
   border-radius: var(--radius-panel);
   box-shadow: var(--shadow-panel);
+  font-size: 1rem;
 }
-@media (min-width: 700px) {
+@media (orientation: landscape) and (max-height: 500px) {
   .game-page {
-    padding-inline: clamp(0.75rem, 3vw, 3rem);
+    gap: 0.25rem;
+    padding-block: max(0.25rem, env(safe-area-inset-top)) max(0.25rem, env(safe-area-inset-bottom));
   }
   .game-table {
-    grid-template-columns: minmax(0, 1fr) 9rem;
-    grid-template-rows: minmax(min-content, 0.7fr) minmax(min-content, 1.5fr) minmax(min-content, 0.7fr) minmax(
-        min-content,
-        1fr
-      );
-    gap: 0.5rem 1rem;
-    min-height: 20rem;
+    gap: 0.4em;
   }
-  .opponent-status {
-    grid-row: 1;
-    grid-column: 2;
-  }
-  .enemy-lane {
-    grid-row: 1;
-    grid-column: 1;
-  }
-  .market-lane {
-    grid-row: 2;
-    grid-column: 1 / -1;
-  }
-  .own-lane {
-    grid-row: 3;
-    grid-column: 1;
-  }
-  .own-status {
-    grid-row: 3;
-    grid-column: 2;
-  }
-  .hand-zone {
-    grid-row: 4;
-    grid-column: 1;
+  .player-area {
+    gap: 0.4em 0.8em;
   }
   .turn-bar {
-    grid-row: 4;
-    grid-column: 2;
-    flex-direction: column;
-    justify-content: center;
+    gap: 0.2em;
   }
-  .market-cards {
-    grid-template-columns: repeat(6, minmax(0, 10rem));
-    grid-template-rows: minmax(min-content, 1fr);
-    justify-content: center;
-    gap: 0.6rem;
+  .outpost-hint {
+    font-size: 0.85em;
   }
-  .hand-cards {
-    grid-template-columns: repeat(var(--cards), minmax(2.75rem, 8rem));
-    gap: 0.4rem;
-  }
-  .zone-label {
-    font-size: 0.65rem;
+  .resource-token,
+  .attack-token {
+    font-size: 1.5em;
   }
   .end-turn {
-    width: 100%;
+    min-height: 2.75rem;
   }
 }
-@media (min-width: 1100px) {
-  .game-page {
-    max-width: 1500px;
-    margin-inline: auto;
-  }
+@media (orientation: landscape) and (max-height: 350px) {
   .game-table {
-    column-gap: 2rem;
-    grid-template-columns: minmax(0, 1fr) 11rem;
-  }
-  .market-cards {
-    grid-template-columns: repeat(6, minmax(0, 12rem));
-    gap: 0.8rem;
-  }
-  .hand-cards {
-    grid-template-columns: repeat(var(--cards), minmax(2.75rem, 10rem));
+    gap: 0.1em;
   }
 }
-@media (max-height: 500px) and (min-width: 700px) {
+@media (orientation: portrait) and (max-width: 699px) {
   .game-page {
-    gap: 0;
-    padding-block: 0.1rem;
+    --table-scale: 0.6875rem;
   }
   .game-table {
-    gap: 0.2rem 0.5rem;
-    min-height: 17rem;
-    grid-template-rows: minmax(min-content, 0.65fr) minmax(min-content, 1.3fr) minmax(min-content, 0.65fr) minmax(
-        min-content,
-        1fr
-      );
+    grid-template-rows: minmax(7em, 18fr) minmax(20em, 44fr) minmax(21em, 38fr);
   }
-  .zone-label {
-    font-size: 0.5rem;
+  .opponent-area {
+    padding: 0 0 0 min(6em, 20%);
+    grid-template-columns: min(10em, 40%) minmax(0, 1fr);
+    gap: 0.5em;
   }
   .market-lane {
-    padding-block: 0.1rem;
+    padding-inline: 0;
   }
-  .turn-bar {
-    flex-direction: row;
-    gap: 0.3rem;
+  .market-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+  .trade-deck-count {
+    bottom: 100%;
+    right: 0;
+  }
+  .market-hint {
+    left: 0;
+    max-width: 80%;
+  }
+  .player-area {
+    grid-template-columns: min(8em, 25%) minmax(0, 1fr) min(8em, 25%);
+    grid-template-rows: minmax(8em, 40fr) minmax(12em, 60fr);
+    column-gap: 0.3em;
   }
   .turn-resources {
-    flex-direction: column;
-    gap: 0;
+    flex-wrap: wrap;
+    gap: 0.1em;
   }
-  .end-turn {
-    padding-inline: 0.35rem;
-    font-size: 0.75rem;
+  .resource-token,
+  .attack-token {
+    font-size: 1.1em;
   }
 }
 </style>

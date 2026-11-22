@@ -30,12 +30,14 @@ describe('table card gestures', () => {
     expect(wrapper.emitted('activate')).toBeUndefined();
   });
 
-  it.each([1, 2])('activates once for two clicks with second detail %i, including touch clicks', async (detail) => {
+  it.each([1, 2])('activates only on dblclick after clicks with second detail %i', async (detail) => {
     const wrapper = setup();
     await click(wrapper.element, 1);
     await vi.advanceTimersByTimeAsync(100);
     await wrapper.trigger('pointerdown');
     await click(wrapper.element, detail);
+    expect(wrapper.emitted('activate')).toBeUndefined();
+    expect(wrapper.emitted('inspect')).toBeUndefined();
     wrapper.element.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, detail: 2 }));
     await click(wrapper.element, 3);
     await vi.advanceTimersByTimeAsync(500);
@@ -43,13 +45,13 @@ describe('table card gestures', () => {
     expect(wrapper.emitted('inspect')).toBeUndefined();
   });
 
-  it('opens immediately for keyboard or assistive activation without a quick action', async () => {
+  it('does not activate on repeated clicks without a dblclick event', async () => {
     const wrapper = setup();
-    await click(wrapper.element, 0);
-    expect(wrapper.emitted('inspect')).toHaveLength(1);
-    await click(wrapper.element, 0);
+    await click(wrapper.element, 1);
+    await vi.advanceTimersByTimeAsync(100);
+    await click(wrapper.element, 1);
     await vi.advanceTimersByTimeAsync(500);
-    expect(wrapper.emitted('inspect')).toHaveLength(2);
+    expect(wrapper.emitted('inspect')).toHaveLength(1);
     expect(wrapper.emitted('activate')).toBeUndefined();
   });
 

@@ -6,7 +6,14 @@ import type { GameCard } from '../../game-types';
 import type { StarfallActionDto } from '@/api/swagger/Starfall/data-contracts';
 import { describeEffect, describeAbility, factionColors, factionNames } from '../../game-presentation';
 import CardArt from './CardArt.vue';
-const props = defineProps<{ card: GameCard; actionable?: boolean; market?: boolean; remaining?: number }>();
+
+const props = defineProps<{
+  card: GameCard;
+  actionable?: boolean;
+  market?: boolean;
+  remaining?: number;
+  inPlay?: boolean;
+}>();
 const emit = defineEmits<{ inspect: [card: GameCard]; activate: [card: GameCard] }>();
 const { t } = useI18n();
 const DOUBLE_CLICK_DELAY = 350;
@@ -22,24 +29,19 @@ const cancelOutsideInspection = (event: PointerEvent) => {
   if (!clickTarget?.contains(event.target as Node)) cancelInspection();
 };
 const handleClick = (event: MouseEvent) => {
-  // Keyboard activation opens immediately; pointer clicks wait so a dialog cannot intercept the second click.
-  if (event.detail === 0) {
-    cancelInspection();
-    emit('inspect', props.card);
-    return;
-  }
-  if (event.detail > 2) return;
-  if (inspectionTimer !== undefined) {
-    cancelInspection();
-    emit('activate', props.card);
-    return;
-  }
+  if (event.detail > 1) return;
+  // Wait for dblclick so the details dialog cannot intercept the second click.
+  cancelInspection();
   clickTarget = event.currentTarget as HTMLElement;
   document.addEventListener('pointerdown', cancelOutsideInspection, true);
   inspectionTimer = setTimeout(() => {
     cancelInspection();
     emit('inspect', props.card);
   }, DOUBLE_CLICK_DELAY);
+};
+const handleDoubleClick = () => {
+  cancelInspection();
+  emit('activate', props.card);
 };
 onBeforeUnmount(cancelInspection);
 const describeCardEffect = (action: StarfallActionDto) => {
@@ -78,80 +80,94 @@ const effects = computed(() => {
   <button
     type="button"
     class="table-card"
-    :class="[{ 'is-actionable': actionable, 'is-outpost': card.outpost }, factionColors[card.fraction]]"
+    :class="[
+      { 'is-actionable': actionable, 'is-outpost': card.outpost, 'is-in-play': inPlay },
+      factionColors[card.fraction]
+    ]"
     :aria-label="t('game.cardDetails', { name: card.name })"
     :title="`${card.name} · ${factionNames[card.fraction]} · ${t(`game.cardTypes.${card.outpost ? 'outpost' : card.type}`)}`"
     @click="handleClick"
-    @dblclick.prevent
+    @dblclick.prevent="handleDoubleClick"
     @blur="cancelInspection"
     @keydown.esc="cancelInspection"
   >
-    <span class="card-heading">
-      <span class="card-name text-ink">{{ card.name }}</span>
-      <span
-        v-if="market"
-        class="card-cost text-warning"
-        :aria-label="t('game.cardCost', { count: card.cost })"
-        >{{ card.cost }}</span
-      >
-    </span>
-    <span class="card-art-slot">
-      <CardArt
-        class="card-art"
-        :type="card.type"
-        :outpost="card.outpost"
-        :fraction="card.fraction"
-      />
-    </span>
-    <span class="card-faction">
-      <span class="font-semibold text-ink-muted">
-        {{ t(`game.cardTypes.${card.type}`)
-        }}<template v-if="card.outpost"> · {{ t('game.cardTypes.outpost') }}</template>
+    <span class="card-content">
+      <span class="card-heading">
+        <span class="card-name text-ink">{{ card.name }}</span>
+        <span
+          v-if="market"
+          class="card-cost text-warning"
+          :aria-label="t('game.cardCost', { count: card.cost })"
+        >
+          {{ card.cost }}
+        </span>
       </span>
-      · {{ factionNames[card.fraction] }}
-    </span>
-    <span
-      v-if="effects.length"
-      class="card-effects text-ink"
-    >
-      <span
-        v-for="(effect, index) in effects"
-        :key="index"
-        class="card-effect"
-      >
-        <strong
-          v-if="effect.label"
-          :class="effect.kind === 'scrap' ? 'text-danger' : 'text-accent'"
-          >{{ effect.label }}: </strong
-        >{{ describeCardEffect(effect.action) }}
+      <span class="card-art-slot">
+        <CardArt
+          class="card-art"
+          :type="card.type"
+          :outpost="card.outpost"
+          :fraction="card.fraction"
+        />
       </span>
-    </span>
-    <span class="card-resources">
+      <span class="card-faction">
+        <span class="font-semibold text-ink-muted">
+          {{ t(`game.cardTypes.${card.type}`) }}
+          <template v-if="card.outpost"> · {{ t('game.cardTypes.outpost') }}</template>
+        </span>
+        · {{ factionNames[card.fraction] }}
+      </span>
       <span
-        v-if="card.money"
-        class="text-warning"
-        :aria-label="t('game.resources.trade', { count: card.money })"
-        ><IconGameResource kind="trade" />{{ card.money }}</span
+        v-if="effects.length"
+        class="card-effects text-ink"
       >
-      <span
-        v-if="card.attack"
-        class="text-danger"
-        :aria-label="t('game.resources.combat', { count: card.attack })"
-        ><IconGameResource kind="combat" />{{ card.attack }}</span
-      >
-      <span
-        v-if="card.type === 'base'"
-        class="text-ink"
-        :aria-label="t('game.resources.defense', { count: card.currentDefense ?? card.health ?? 0 })"
-        ><IconGameResource kind="defense" />{{ card.currentDefense ?? card.health ?? 0 }}</span
-      >
-      <span
-        v-if="remaining !== undefined"
-        class="remaining-count text-ink-muted"
-        :title="t('game.remaining', { count: remaining })"
-        :aria-label="t('game.remaining', { count: remaining })"
-        ><IconGameResource kind="deck" />{{ remaining }}</span
-      >
+        <span
+          v-for="(effect, index) in effects"
+          :key="index"
+          class="card-effect"
+        >
+          <strong
+            v-if="effect.label"
+            :class="effect.kind === 'scrap' ? 'text-danger' : 'text-accent'"
+          >
+            {{ effect.label }}:
+          </strong>
+          {{ describeCardEffect(effect.action) }}
+        </span>
+      </span>
+      <span class="card-resources">
+        <span
+          v-if="card.money"
+          class="text-warning"
+          :aria-label="t('game.resources.trade', { count: card.money })"
+        >
+          <IconGameResource kind="trade" />{{ card.money }}
+        </span>
+        <span
+          v-if="card.attack"
+          class="text-danger"
+          :aria-label="t('game.resources.combat', { count: card.attack })"
+        >
+          <IconGameResource kind="combat" />{{ card.attack }}</span
+        >
+        <span
+          v-if="card.type === 'base'"
+          class="text-ink"
+          :aria-label="t('game.resources.defense', { count: card.currentDefense ?? card.health ?? 0 })"
+        >
+          <IconGameResource kind="defense" />
+          {{ card.currentDefense ?? card.health ?? 0 }}
+        </span>
+        <span
+          v-if="remaining !== undefined"
+          class="remaining-count text-ink-muted"
+          :title="t('game.remaining', { count: remaining })"
+          :aria-label="t('game.remaining', { count: remaining })"
+        >
+          <IconGameResource kind="deck" />
+          {{ remaining }}
+        </span>
+      </span>
     </span>
     <span
       v-if="actionable"
@@ -162,19 +178,21 @@ const effects = computed(() => {
 </template>
 <style scoped>
 .table-card {
+  container-type: size;
   position: relative;
   touch-action: manipulation;
   user-select: none;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  min-height: 2.75rem;
+  min-height: 0;
   height: 100%;
   overflow: visible;
   border: 1px solid var(--color-line-strong);
   border-top: 2px solid currentColor;
-  border-radius: 0.4rem;
-  padding: 0.3rem;
+  border-radius: 0.35em;
+  padding: 0.3em;
+  font-size: inherit;
   background: linear-gradient(155deg, var(--color-surface-raised), var(--color-canvas));
   text-align: left;
   box-shadow: 0 3px 8px rgb(0 0 0 / 0.35);
@@ -182,6 +200,24 @@ const effects = computed(() => {
     border-color 150ms,
     background-color 150ms,
     transform 150ms;
+}
+.card-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  font-size: min(1em, 12cqh, 9cqw);
+  line-height: 1.2;
+}
+.table-card:has(.card-effect:nth-child(2)) .card-content {
+  font-size: min(1em, 10cqh, 8cqw);
+}
+.table-card:has(.card-effect:nth-child(4)) .card-content {
+  font-size: min(0.9em, 7cqh, 6.25cqw);
+}
+.table-card:has(.card-effect:nth-child(6)) .card-content {
+  font-size: min(0.85em, 6cqh, 6cqw);
 }
 .table-card:hover,
 .table-card:focus-visible {
@@ -198,14 +234,14 @@ const effects = computed(() => {
 .card-heading {
   display: flex;
   align-items: start;
-  gap: 0.2rem;
+  gap: 0.2em;
   min-height: 0;
   flex-shrink: 0;
 }
 .card-name {
   display: block;
   overflow-wrap: anywhere;
-  font-size: clamp(0.625rem, 1vw, 0.85rem);
+  font-size: 0.95em;
   font-weight: 600;
   line-height: 1.15;
   flex: 1;
@@ -219,13 +255,13 @@ const effects = computed(() => {
   border: 1px solid currentColor;
   border-radius: 50%;
   font-family: var(--font-mono);
-  font-size: clamp(0.65rem, 1.1vw, 0.9rem);
+  font-size: 1em;
 }
 .card-art-slot {
   position: relative;
   display: block;
   flex: 1;
-  min-height: 0.5rem;
+  min-height: 1em;
 }
 .card-art {
   position: absolute;
@@ -237,16 +273,16 @@ const effects = computed(() => {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.2rem;
-  min-height: 0.8rem;
+  gap: 0.2em;
+  min-height: 1em;
   flex-shrink: 0;
   font-family: var(--font-mono);
-  font-size: clamp(0.6rem, 1vw, 0.85rem);
+  font-size: 0.85em;
 }
 .card-resources > span {
   display: inline-flex;
   align-items: center;
-  gap: 0.1rem;
+  gap: 0.1em;
 }
 .card-resources svg {
   width: 1em;
@@ -256,23 +292,25 @@ const effects = computed(() => {
   margin-left: auto;
 }
 .card-faction {
-  font-size: clamp(0.5rem, 0.8vw, 0.65rem);
+  flex-shrink: 0;
+  font-size: 0.72em;
   line-height: 1.2;
-  margin-block: 0.15rem;
+  margin-block: 0.2em;
   overflow-wrap: anywhere;
 }
 .card-effects {
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  margin-block: 0.2rem;
-  font-size: clamp(0.625rem, 0.9vw, 0.75rem);
+  gap: 0.15em;
+  margin-block: 0.2em;
+  font-size: 0.85em;
   line-height: 1.25;
   overflow-wrap: anywhere;
 }
 .card-effect + .card-effect {
   border-top: 1px solid var(--color-line);
-  padding-top: 0.15rem;
+  padding-top: 0.15em;
 }
 .card-effect strong {
   font-weight: 500;
@@ -286,27 +324,40 @@ const effects = computed(() => {
   border-radius: 50%;
   background: var(--color-accent);
 }
-@media (max-height: 500px) and (min-width: 700px) {
-  .table-card {
-    padding: 0.2rem;
-  }
-  .card-art-slot {
-    min-height: 0;
-  }
-  .card-name {
-    font-size: 0.625rem;
-  }
-  .card-faction {
-    margin-block: 0.05rem;
-  }
-  .card-effects {
-    margin-block: 0.05rem;
-    gap: 0.1rem;
-    font-size: 0.5625rem;
-    line-height: 1.15;
-  }
-  .card-effect + .card-effect {
-    padding-top: 0.05rem;
-  }
+.is-in-play .card-content {
+  display: grid;
+  grid-template-columns: minmax(0, 0.65fr) minmax(0, 1.35fr);
+  grid-template-rows: auto auto 1fr auto;
+  grid-template-areas:
+    'heading heading'
+    'faction faction'
+    'art effects'
+    'art resources';
+  column-gap: 0.3em;
+}
+.is-in-play:has(.card-effect:nth-child(4)) .card-content {
+  grid-template-columns: minmax(0, 1fr) 3em;
+  grid-template-areas:
+    'heading art'
+    'faction art'
+    'effects effects'
+    'resources resources';
+}
+.is-in-play .card-heading {
+  grid-area: heading;
+}
+.is-in-play .card-art-slot {
+  grid-area: art;
+}
+.is-in-play .card-faction {
+  grid-area: faction;
+}
+.is-in-play .card-effects {
+  grid-area: effects;
+  align-self: center;
+  font-size: 0.8em;
+}
+.is-in-play .card-resources {
+  grid-area: resources;
 }
 </style>
