@@ -1,3 +1,5 @@
+import { realtimeMock } from './helpers/mock-game-realtime';
+vi.mock('@/modules/games/game-realtime', () => import('./helpers/mock-game-realtime'));
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DOMWrapper, enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
@@ -20,7 +22,6 @@ let nativeDialog: ReturnType<typeof mockDialog>;
 beforeEach(() => {
   vi.resetAllMocks();
   nativeDialog = mockDialog();
-  Object.defineProperty(navigator, 'onLine', { configurable: true, value: true });
   api.getStarfallLobby.mockResolvedValue(makeLobby());
   api.getStarfallGame.mockResolvedValue(makeGame());
   api.executeStarfallCommand.mockResolvedValue(makeGame({ version: 2 }));
@@ -81,19 +82,12 @@ describe('game page', () => {
     expect(api.executeStarfallCommand).not.toHaveBeenCalled();
   });
 
-  it('clears the game transport when the page unmounts', async () => {
+  it('clears the socket when the page unmounts', async () => {
     const wrapper = await setup();
-    const late = deferred<GameView>();
-    api.getStarfallGame.mockReturnValueOnce(late.promise);
-    window.dispatchEvent(new Event('online'));
-    const request = api.getStarfallGame.mock.calls[1]![1];
     wrapper.unmount();
-    expect(request.signal.aborted).toBe(true);
-    late.resolve(makeGame({ version: 2 }));
+    expect(realtimeMock.clear).toHaveBeenCalledOnce();
     await flushPromises();
-    window.dispatchEvent(new Event('online'));
-    await flushPromises();
-    expect(api.getStarfallGame).toHaveBeenCalledTimes(2);
+    expect(api.getStarfallGame).toHaveBeenCalledTimes(1);
   });
   it('renders all zones with SVG art and sends a play command', async () => {
     const wrapper = await setup();
@@ -322,8 +316,7 @@ describe('game page', () => {
     await inspectCard(wrapper.get('[aria-label="View Scout details"]'));
     const updated = makeGame({ version: 2 });
     updated.players[0]!.hand![0]!.money = 3;
-    api.getStarfallGame.mockResolvedValue(updated);
-    window.dispatchEvent(new Event('online'));
+    realtimeMock.callbacks!.onState(updated);
     await flushPromises();
     const details = new DOMWrapper(document.querySelector('dialog')!);
     expect(details.get('h2').text()).toBe('Scout');
@@ -336,8 +329,7 @@ describe('game page', () => {
     expect(document.querySelector('dialog')).toBeNull();
     expect(api.executeStarfallCommand).not.toHaveBeenCalled();
     await findButton(wrapper, 'End turn').trigger('click');
-    api.getStarfallGame.mockResolvedValue(makeGame({ version: 2 }));
-    window.dispatchEvent(new Event('online'));
+    realtimeMock.callbacks!.onState(makeGame({ version: 2 }));
     await flushPromises();
     expect(document.querySelector('dialog')).toBeNull();
     expect(api.executeStarfallCommand).not.toHaveBeenCalled();

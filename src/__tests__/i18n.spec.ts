@@ -1,3 +1,4 @@
+vi.mock('@/modules/games/game-realtime', () => import('./helpers/mock-game-realtime'));
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 import { createPinia } from 'pinia';

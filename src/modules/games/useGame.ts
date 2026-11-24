@@ -5,8 +5,8 @@ import { createUuid } from '@/helpers/uuid';
 import { useStarfall } from '@/api/swagger/Starfall/Starfall';
 import type { StarfallLobbyDto } from '@/api/swagger/Starfall/data-contracts';
 import type { GameAction, GameCommand, GameView } from './game-types';
+import { createGameRealtime } from './game-realtime';
 
-const POLL_DELAY = 2000;
 const REQUEST_TIMEOUT = 10000;
 
 export function useGame(gameId: MaybeRefOrGetter<string>, playerId: Ref<string>) {
@@ -34,22 +34,14 @@ export function useGame(gameId: MaybeRefOrGetter<string>, playerId: Ref<string>)
   const canJoin = computed(
     () => canSend.value && !game.value && lobby.value?.status === 'waiting' && lobby.value.players.length < 2
   );
-  let timer: ReturnType<typeof setTimeout> | undefined;
+  let realtime: ReturnType<typeof createGameRealtime> | undefined;
+  let socketReady = false;
   let readController: AbortController | undefined;
 
-  const clearTimer = () => {
-    clearTimeout(timer);
-    timer = undefined;
-  };
   const stopRead = () => {
     readController?.abort();
     readController = undefined;
     isRefreshing.value = false;
-  };
-  const schedule = () => {
-    clearTimer();
-    if (terminal.value || isSending.value || game.value?.status === 'finished') return;
-    timer = setTimeout(refresh, POLL_DELAY);
   };
   const applyGame = (next: GameView) => {
     if (next.id !== toValue(gameId) || (game.value && next.version < game.value.version)) {
@@ -58,6 +50,32 @@ export function useGame(gameId: MaybeRefOrGetter<string>, playerId: Ref<string>)
     if (!game.value || next.version !== game.value.version) {
       game.value = next;
     }
+  };
+  const connectRealtime = () => {
+    if (socketReady || terminal.value || !game.value) return;
+    if (!realtime) {
+      realtime = createGameRealtime(toValue(gameId), {
+        onState: applyGame,
+        onConnection: (ready) => {
+          socketReady = ready;
+          isSynced.value = ready;
+          errorKey.value = ready ? '' : 'game.errors.connection';
+        },
+        onError: (status) => {
+          isSynced.value = false;
+          terminal.value = status === 400 || status === 401 || status === 403 || status === 404;
+          errorKey.value =
+            status === 401
+              ? 'game.errors.session'
+              : status === 403
+                ? 'game.errors.forbidden'
+                : status === 404
+                  ? 'game.errors.notFound'
+                  : 'game.errors.connection';
+        }
+      });
+    }
+    realtime.connect();
   };
   const failureMessage = (cause: unknown) => {
     const status = axios.isAxiosError(cause) ? cause.response?.status : undefined;
@@ -68,7 +86,6 @@ export function useGame(gameId: MaybeRefOrGetter<string>, playerId: Ref<string>)
   };
 
   async function refresh() {
-    clearTimer();
     if (isSending.value || isRefreshing.value || terminal.value) {
       return;
     }
@@ -100,8 +117,9 @@ export function useGame(gameId: MaybeRefOrGetter<string>, playerId: Ref<string>)
         if (readController !== controller) return;
         applyGame(next);
       }
-      isSynced.value = true;
       errorKey.value = '';
+      isSynced.value = !game.value || socketReady;
+      return true;
     } catch (cause) {
       if (readController !== controller || axios.isCancel(cause)) {
         return;
@@ -115,9 +133,12 @@ export function useGame(gameId: MaybeRefOrGetter<string>, playerId: Ref<string>)
         isLoading.value = false;
         isRefreshing.value = false;
         readController = undefined;
-        schedule();
       }
     }
+  }
+
+  async function loadAndConnect() {
+    if (await refresh()) connectRealtime();
   }
 
   async function mutate(command: GameCommand | null) {
@@ -126,21 +147,23 @@ export function useGame(gameId: MaybeRefOrGetter<string>, playerId: Ref<string>)
     }
     const id = toValue(gameId);
     const version = lobby.value?.version;
-    clearTimer();
     stopRead();
     isSending.value = true;
     commandErrorKey.value = '';
     serverCommandError.value = '';
     const params = { timeout: REQUEST_TIMEOUT };
+    let shouldRefresh = false;
     try {
       const next = command
         ? await api.executeStarfallCommand({ gameId: id }, command, params)
         : await api.joinStarfallGame({ gameId: id }, { expectedVersion: version! }, params);
       applyGame(next);
       uncertainCommand.value = null;
-      isSynced.value = true;
-      errorKey.value = '';
+      isSynced.value = socketReady;
+      if (socketReady) errorKey.value = '';
+      if (!command) connectRealtime();
     } catch (cause) {
+      shouldRefresh = true;
       const status = axios.isAxiosError(cause) ? cause.response?.status : undefined;
       isSynced.value = false;
       if (status === 409) {
@@ -160,8 +183,10 @@ export function useGame(gameId: MaybeRefOrGetter<string>, playerId: Ref<string>)
       }
     } finally {
       isSending.value = false;
-      if (!isSynced.value) void refresh();
-      else schedule();
+      if (shouldRefresh) {
+        if (command) void refresh();
+        else void loadAndConnect();
+      }
     }
   }
 
@@ -179,14 +204,11 @@ export function useGame(gameId: MaybeRefOrGetter<string>, playerId: Ref<string>)
   };
   const retry = () => {
     terminal.value = false;
-    return refresh();
-  };
-  const init = () => {
-    return refresh();
+    return loadAndConnect();
   };
   const clear = () => {
-    clearTimer();
     stopRead();
+    realtime?.clear();
   };
   return {
     game,
@@ -208,7 +230,7 @@ export function useGame(gameId: MaybeRefOrGetter<string>, playerId: Ref<string>)
     join,
     act,
     retryCommand,
-    init,
+    init: loadAndConnect,
     clear
   };
 }

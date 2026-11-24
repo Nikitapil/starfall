@@ -9,7 +9,7 @@ const $api = axios.create({
 
 let refreshPromise: Promise<void> | null = null;
 
-const refreshAccessToken = () => {
+export const refreshAccessToken = () => {
   if (!refreshPromise) {
     refreshPromise = axios
       .get<AuthResponseDto>('/api/auth/refresh', {
