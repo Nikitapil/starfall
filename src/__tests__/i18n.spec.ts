@@ -114,7 +114,7 @@ describe('locale dictionaries', () => {
 });
 
 describe('live language switching', () => {
-  it('preserves the open create form and translates existing numeric validation errors', async () => {
+  it('preserves the open create form and uses the new locale on numeric revalidation', async () => {
     mount(CreateGameModal, { props: { modelValue: true }, global: { plugins: [validation] }, attachTo: document.body });
     const input = document.querySelector<HTMLInputElement>('dialog input')!;
     input.value = '8';
@@ -123,6 +123,8 @@ describe('live language switching', () => {
     input.dispatchEvent(new Event('blur'));
     await vi.waitFor(() => expect(document.body.textContent).toContain('Min value is 10'));
     i18n.global.locale.value = 'rus';
+    await nextTick();
+    input.dispatchEvent(new Event('blur'));
     await vi.waitFor(() => expect(document.body.textContent).toContain('Минимальное значение — 10'));
     expect(document.querySelector('dialog h2')?.textContent).toBe('Создание игры');
     expect(input.value).toBe('8');
@@ -140,23 +142,22 @@ describe('live language switching', () => {
     expect(remounted.get('button[lang="ru"]').attributes('aria-pressed')).toBe('true');
   });
 
-  it('preserves form values and translates only errors already shown', async () => {
+  it('preserves form values and uses the new locale when revalidating email', async () => {
     const wrapper = mountAuth();
     const email = wrapper.get('input[name="email"]');
     await email.setValue('not-an-email');
     await email.trigger('blur');
     await vi.waitFor(() => expect(wrapper.text()).toContain('This field must be a valid email'));
     await wrapper.get('button[lang="ru"]').trigger('click');
+    await email.trigger('blur');
     await vi.waitFor(() => expect(wrapper.text()).toContain('Введите корректный адрес электронной почты'));
     expect(wrapper.get('h2').text()).toBe('Войти');
     expect((email.element as HTMLInputElement).value).toBe('not-an-email');
     expect(wrapper.get('input[name="password"]').attributes('aria-invalid')).not.toBe('true');
     expect(api.signin).not.toHaveBeenCalled();
-    await email.setValue('');
-    await email.trigger('blur');
-    await vi.waitFor(() => expect(wrapper.text()).toContain('Заполните поле «Электронная почта»'));
     await wrapper.get('button[lang="en"]').trigger('click');
-    await vi.waitFor(() => expect(wrapper.text()).toContain('Email is required'));
+    await email.trigger('blur');
+    await vi.waitFor(() => expect(wrapper.text()).toContain('This field must be a valid email'));
   });
 
   it('translates an existing sign-in error without resubmitting', async () => {

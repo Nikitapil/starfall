@@ -93,13 +93,13 @@ describe('pending choices', () => {
       options: [[{ name: 'plus_money', value: 3 }], [{ name: 'plus_attack', value: 5 }]] as StarfallActionDto[][]
     });
     const wrapper = mount(PendingActionPanel, { props: { game, playerId: '1', disabled: false, loading: false } });
-    await button(wrapper, 'Option 2').trigger('click');
+    await button(wrapper, 'Gain 5 Combat').trigger('click');
     await wrapper.setProps({ game: { ...game } });
-    expect(button(wrapper, 'Selected 2').attributes('aria-pressed')).toBe('true');
+    expect(button(wrapper, 'Gain 5 Combat').attributes('aria-pressed')).toBe('true');
     await button(wrapper, 'Confirm choice').trigger('click');
     expect(wrapper.emitted('action')![0]).toEqual([{ type: 'resolve_pending', payload: { optionIndex: 1 } }]);
     await wrapper.setProps({ game: { ...game, version: game.version + 1 } });
-    expect(button(wrapper, 'Option 2').attributes('aria-pressed')).toBe('false');
+    expect(button(wrapper, 'Gain 5 Combat').attributes('aria-pressed')).toBe('false');
     expect(button(wrapper, 'Confirm choice').attributes('disabled')).toBeDefined();
     wrapper.unmount();
   });

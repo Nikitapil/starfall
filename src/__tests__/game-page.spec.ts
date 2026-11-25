@@ -169,14 +169,14 @@ describe('game page', () => {
     const card = wrapper.get('[aria-label="View Long named command carrier details"]');
     expect(card.text()).toContain('Long named command carrier');
     expect(card.text()).toContain('Draw 2 cards');
-    expect(card.text()).toContain('Ally: +3 Combat');
-    expect(card.text()).toContain('Scrap: +4 Trade');
+    expect(card.text()).toMatch(/Ally:\s+\+3 Combat/);
+    expect(card.text()).toMatch(/Scrap:\s+\+4 Trade/);
     expect(card.text()).toContain('+1 Authority');
     expect(card.findAll('.card-effect')).toHaveLength(4);
     expect(document.querySelector('dialog')).toBeNull();
     i18n.global.locale.value = 'rus';
     await flushPromises();
-    expect(card.text()).toContain('Союзная: +3 к бою');
+    expect(card.text()).toMatch(/Союзная:\s+\+3 к бою/);
     expect(api.executeStarfallCommand).not.toHaveBeenCalled();
   });
 
