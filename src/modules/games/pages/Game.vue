@@ -601,7 +601,7 @@ const { t } = useI18n();
         <AppButton
           variant="ghost"
           @click="auth.logout()"
-          >
+        >
           {{ t('common.logout') }}
         </AppButton>
       </div>

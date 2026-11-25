@@ -449,6 +449,11 @@ export interface GetStarfallGamesParams {
    * @default false
    */
   notStarted?: boolean;
+  /**
+   * Return only my games
+   * @default false
+   */
+  my?: boolean;
 }
 
 export interface GetStarfallGameParams {

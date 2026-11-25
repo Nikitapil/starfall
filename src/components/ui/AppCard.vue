@@ -37,8 +37,7 @@ const cardClasses = computed(() => [
   'rounded-card border',
   variantClasses[props.variant],
   paddingClasses[props.padding],
-  props.interactive &&
-    'transition duration-200 ease-out-expo hover:border-line-strong hover:bg-surface-raised'
+  props.interactive && 'transition duration-200 ease-out-expo hover:border-line-strong hover:bg-surface-raised'
 ]);
 </script>
 
