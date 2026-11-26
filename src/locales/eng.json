@@ -168,7 +168,7 @@
     "turn": {
       "intro": "You may perform the actions below in any useful order unless a card or pending choice says otherwise. You can play a card, buy a card, resolve an ability, then continue playing. The interface tracks available Trade and Combat for you.",
       "playText": "Play any or all Ships from your hand face up. Bases already under your control remain in play. Drawn cards may also be played this turn.",
-      "abilitiesText": "Gain resources from primary abilities, trigger Ally abilities when their condition is met, and make any required choices. Optional abilities may be skipped.",
+      "abilitiesText": "Gain resources from primary abilities. Ally abilities that need no choice from you resolve automatically; use the button for abilities that require a choice. Optional manual abilities may be skipped.",
       "acquireText": "Spend Trade equal to a card’s cost. Acquired cards normally enter your discard pile and cannot be played immediately. Replace a purchased Trade Row card at once. Explorers remain available while their supply lasts.",
       "attackText": "Spend Combat against enemy Bases or the opposing player. Outposts must be destroyed before you can attack other targets that they protect.",
       "endText": "Discard every Ship you played and every card left in your hand. Set unused Trade and Combat to zero, then draw a new hand of five cards. Bases remain in play.",
@@ -182,7 +182,7 @@
       "primary": "Primary ability",
       "primaryText": "The main effect of a Ship when played or of a Base on your turn. Resolve every listed effect unless it is explicitly optional.",
       "ally": "Ally ability",
-      "allyText": "Activates when another card of the same faction is in play on your side. Play order does not matter: if a second matching card arrives later, eligible Ally abilities become available. Each ability is used at most once per turn.",
+      "allyText": "Requires another card of the same faction in play on your side. Playing or copying a card automatically resolves Ally abilities that need no choice from you on all eligible cards in play; surviving allied Bases also resolve them at the start of your turn. Pending choices and all their steps finish before Ally bonuses resolve. Opponent discard effects are automatic too: the opponent chooses cards at the start of their turn. Use the button for abilities requiring a card, target, or effect choice. Each ability is used at most once per turn.",
       "scrap": "Scrap ability",
       "scrapText": "Remove that card from play to gain its Scrap effect. You may use its primary and Ally abilities first, then Scrap it. The card does not enter your discard pile at the end of the turn.",
       "choices": "Choices and targets",

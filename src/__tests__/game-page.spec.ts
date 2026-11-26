@@ -106,6 +106,94 @@ describe('game page', () => {
       expectedVersion: 1
     });
   });
+  it('shows automatic ally results from the play response without sending ability commands', async () => {
+    const game = makeGame();
+    const ram = makeCard({
+      id: 'ram',
+      name: 'Ram',
+      money: 0,
+      attack: 5,
+      matchAbilities: [{ name: 'plus_attack', value: 2 }] as GameCard['matchAbilities'],
+      abilityStates: [
+        { id: 'ally:0', kind: 'ally', action: { name: 'plus_attack', value: 2 }, isUsed: false, isAvailable: false }
+      ] as GameCard['abilityStates']
+    });
+    game.players[0]!.playedShips = [ram];
+    game.players[0]!.hand = [makeCard({ id: 'pod', name: 'Trade Pod' })];
+    api.getStarfallGame.mockResolvedValue(game);
+    const result = makeGame({ version: 2 });
+    result.players[0]!.attack = 9;
+    result.players[0]!.money = 3;
+    result.players[0]!.hand = [];
+    result.players[0]!.handCount = 0;
+    result.players[0]!.playedShips = [
+      {
+        ...ram,
+        usedAbilities: ['ally:0'],
+        abilityStates: ram.abilityStates.map((ability) => ({ ...ability, isUsed: true }))
+      },
+      makeCard({ id: 'pod', name: 'Trade Pod' })
+    ];
+    api.executeStarfallCommand.mockResolvedValue(result);
+    const wrapper = await setup();
+    await doubleClick(wrapper.get('[aria-label="View Trade Pod details"]'));
+    expect(wrapper.get('.turn-bar [aria-label="Attack Bob · 9 Combat"]').isVisible()).toBe(true);
+    expect(wrapper.get('.turn-bar [aria-label="3 Trade"]').isVisible()).toBe(true);
+    await doubleClick(wrapper.get('[aria-label="View Ram details"]'));
+    const dialog = new DOMWrapper(document.querySelector('dialog')!);
+    expect(dialog.text()).toContain('Ally · Used');
+    expect(dialog.findAll('button').some((button) => button.text().includes('Ally:'))).toBe(false);
+    expect(api.executeStarfallCommand).toHaveBeenCalledTimes(1);
+    expect(api.executeStarfallCommand.mock.calls[0]![1]).toMatchObject({
+      type: 'play_card',
+      payload: { cardId: 'pod' }
+    });
+  });
+
+  it('keeps an ally requiring a target available as a manual action', async () => {
+    const game = makeGame();
+    game.players[0]!.playedShips = [
+      makeCard({
+        id: 'destroyer',
+        name: 'Blob Destroyer',
+        abilityStates: [
+          {
+            id: 'ally:0',
+            kind: 'ally',
+            action: { name: 'destroy_base', optional: true },
+            isUsed: false,
+            isAvailable: true
+          }
+        ] as GameCard['abilityStates']
+      })
+    ];
+    api.getStarfallGame.mockResolvedValue(game);
+    api.executeStarfallCommand.mockResolvedValue({
+      ...game,
+      version: 2,
+      pendingAction: {
+        type: 'choose_base_to_destroy',
+        playerId: '1',
+        sourceCardId: 'destroyer',
+        abilityId: 'ally:0',
+        optional: true,
+        continuation: []
+      }
+    });
+    const wrapper = await setup();
+    expect(api.executeStarfallCommand).not.toHaveBeenCalled();
+    await inspectCard(wrapper.get('[aria-label="View Blob Destroyer details"]'));
+    const dialog = new DOMWrapper(document.querySelector('dialog')!);
+    await findButton(dialog, 'Ally:').trigger('click');
+    await flushPromises();
+    expect(api.executeStarfallCommand).toHaveBeenCalledTimes(1);
+    expect(api.executeStarfallCommand.mock.calls[0]![1]).toMatchObject({
+      type: 'use_ability',
+      payload: { cardId: 'destroyer', abilityId: 'ally:0' }
+    });
+    expect(wrapper.get('[aria-labelledby="pending-title"]').isVisible()).toBe(true);
+  });
+
   it('shows every board area together without navigation tabs', async () => {
     const wrapper = await setup();
     expect(wrapper.find('nav').exists()).toBe(false);
